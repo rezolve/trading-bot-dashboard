@@ -78,9 +78,68 @@ export const triggerBacktest = functions.https.onCall(async (data, context) => {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  // TODO: In production, this would trigger a Cloud Run job or container
-  // For now, we'll simulate a backtest completion after a delay
-  // The actual backtest runner will be implemented in Python
+  // For local development with emulators, run backtest synchronously
+  // In production, this would trigger a Cloud Run job
+  if (process.env.FUNCTIONS_EMULATOR === 'true') {
+    // Simulate backtest execution in emulator
+    setTimeout(async () => {
+      try {
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Generate mock backtest results
+        const mockResults = {
+          totalReturn: Math.random() * 10000 - 2000,
+          totalReturnPercent: Math.random() * 20 - 5,
+          sharpeRatio: Math.random() * 2,
+          maxDrawdown: Math.random() * -5000,
+          maxDrawdownPercent: Math.random() * -10,
+          winRate: 0.45 + Math.random() * 0.3,
+          totalTrades: Math.floor(Math.random() * 50) + 10,
+          profitableTrades: Math.floor(Math.random() * 30) + 5,
+          losingTrades: Math.floor(Math.random() * 20) + 5,
+          avgWin: Math.random() * 500 + 100,
+          avgLoss: Math.random() * -300 - 50,
+          profitFactor: 1.2 + Math.random() * 1.5,
+        };
+        
+        // Update backtest status
+        await backtestRef.update({
+          status: 'completed',
+          summary: mockResults,
+          completedAt: admin.firestore.FieldValue.serverTimestamp(),
+          reportUrl: `gs://demo/${userId}/${botId}/${backtestId}/report.json`,
+          equityCurveUrl: `gs://demo/${userId}/${botId}/${backtestId}/equity_curve.json`,
+          tradesUrl: `gs://demo/${userId}/${botId}/${backtestId}/trades.csv`,
+        });
+        
+        // Update bot status
+        await botRef.update({
+          status: 'backtest',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        
+        // Log completion
+        await db.collection('bot-activity').add({
+          botId,
+          userId,
+          eventType: 'backtest_completed',
+          message: `Backtest completed: Return ${mockResults.totalReturnPercent.toFixed(2)}%, Sharpe ${mockResults.sharpeRatio.toFixed(2)}`,
+          metadata: { backtestId, summary: mockResults },
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        
+        console.log(`Backtest ${backtestId} completed (emulator simulation)`);
+      } catch (error) {
+        console.error(`Backtest ${backtestId} failed:`, error);
+        await backtestRef.update({
+          status: 'failed',
+          error: String(error),
+          completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    }, 0);
+  }
 
   return { backtestId, status: 'queued' };
 });

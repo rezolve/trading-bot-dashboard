@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { db } from '@/lib/firebase';
+import { db, callTriggerBacktest, callSwapInBot, callSwapOutBot } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { Bot, BacktestRun, BotActivityEvent } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Play, Pause, Activity, TrendingUp, Settings,
-  AlertCircle, Clock
+  AlertCircle, Clock, Loader2
 } from 'lucide-react';
 
 export default function BotDetailPage({ params }: { params: { botId: string } }) {
@@ -18,6 +18,8 @@ export default function BotDetailPage({ params }: { params: { botId: string } })
   const [backtests, setBacktests] = useState<BacktestRun[]>([]);
   const [activity, setActivity] = useState<BotActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [backtestLoading, setBacktestLoading] = useState(false);
+  const [swapLoading, setSwapLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -78,14 +80,63 @@ export default function BotDetailPage({ params }: { params: { botId: string } })
     };
   }, [user, params.botId]);
 
+  const handleRunBacktest = async () => {
+    if (!bot) return;
+    
+    setBacktestLoading(true);
+    try {
+      // Default to last 60 days
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 60);
+      
+      const result = await callTriggerBacktest({
+        botId: bot.botId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        initialCapital: 100000,
+      });
+      
+      console.log('Backtest started:', result.data);
+      // Backtest will appear in the list via onSnapshot
+    } catch (error: any) {
+      console.error('Error starting backtest:', error);
+      alert(`Failed to start backtest: ${error.message || 'Unknown error'}`);
+    } finally {
+      setBacktestLoading(false);
+    }
+  };
+
   const handleSwapIn = async () => {
-    // TODO: Call Cloud Function
-    alert('Swap In functionality will call Cloud Function triggerBacktest');
+    if (!bot) return;
+    
+    setSwapLoading(true);
+    try {
+      const result = await callSwapInBot({ botId: bot.botId });
+      console.log('Bot swapped in:', result.data);
+      // Status will update via onSnapshot
+    } catch (error: any) {
+      console.error('Error swapping in bot:', error);
+      alert(`Failed to swap in bot: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSwapLoading(false);
+    }
   };
 
   const handleSwapOut = async () => {
-    // TODO: Call Cloud Function
-    alert('Swap Out functionality will call Cloud Function swapOutBot');
+    if (!bot) return;
+    
+    setSwapLoading(true);
+    try {
+      const result = await callSwapOutBot({ botId: bot.botId });
+      console.log('Bot swapped out:', result.data);
+      // Status will update via onSnapshot
+    } catch (error: any) {
+      console.error('Error swapping out bot:', error);
+      alert(`Failed to swap out bot: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSwapLoading(false);
+    }
   };
 
   if (loading) {
@@ -127,22 +178,59 @@ export default function BotDetailPage({ params }: { params: { botId: string } })
           </div>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={handleRunBacktest}
+            disabled={backtestLoading}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center gap-2"
+          >
+            {backtestLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <TrendingUp className="w-5 h-5" />
+                Run Backtest
+              </>
+            )}
+          </button>
+          
           {bot.status === 'paper' ? (
             <button
               onClick={handleSwapOut}
-              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg flex items-center gap-2"
+              disabled={swapLoading}
+              className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center gap-2"
             >
-              <Pause className="w-5 h-5" />
-              Swap Out
+              {swapLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Swapping...
+                </>
+              ) : (
+                <>
+                  <Pause className="w-5 h-5" />
+                  Swap Out
+                </>
+              )}
             </button>
           ) : (
             <button
               onClick={handleSwapIn}
-              disabled={bot.status === 'draft'}
+              disabled={bot.status === 'draft' || swapLoading}
               className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center gap-2"
             >
-              <Play className="w-5 h-5" />
-              Swap In
+              {swapLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Swapping...
+                </>
+              ) : (
+                <>
+                  <Play className="w-5 h-5" />
+                  Swap In
+                </>
+              )}
             </button>
           )}
         </div>
