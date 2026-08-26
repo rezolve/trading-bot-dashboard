@@ -10,6 +10,8 @@ import {
   ArrowLeft, Play, Pause, Activity, TrendingUp, Settings,
   AlertCircle, Clock, Loader2
 } from 'lucide-react';
+import { BacktestProgressPanel } from '@/components/backtest-progress-panel';
+import { BacktestResultsSummary } from '@/components/backtest-results-summary';
 
 export default function BotDetailPage({ params }: { params: { botId: string } }) {
   const { user } = useAuth();
@@ -235,6 +237,16 @@ export default function BotDetailPage({ params }: { params: { botId: string } })
           )}
         </div>
       </div>
+
+      {/* Running Backtest Progress */}
+      {backtests.length > 0 && (backtests[0].status === 'running' || backtests[0].status === 'queued') && (
+        <BacktestProgressPanel backtest={backtests[0]} botName={bot.name} />
+      )}
+
+      {/* Latest Backtest Results */}
+      {backtests.length > 0 && backtests[0].status === 'completed' && (
+        <BacktestResultsSummary backtest={backtests[0]} />
+      )}
 
       {/* Status Card */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">

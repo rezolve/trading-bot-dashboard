@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { Bot } from '@/lib/types';
+import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
+import { Bot, BacktestRun } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { 
   Bot as BotIcon,
@@ -17,11 +17,13 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
+import { BacktestProgressPanel } from '@/components/backtest-progress-panel';
 
 export default function FleetPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [bots, setBots] = useState<Bot[]>([]);
+  const [runningBacktest, setRunningBacktest] = useState<BacktestRun | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'draft' | 'paper' | 'stopped'>('all');
 
@@ -47,6 +49,43 @@ export default function FleetPage() {
 
       setBots(botsData);
       setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for running backtests
+  useEffect(() => {
+    if (!user) return;
+
+    const backtestQuery = query(
+      collection(db, 'backtest-runs'),
+      where('userId', '==', user.uid),
+      where('status', 'in', ['queued', 'running']),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    );
+
+    const unsubscribe = onSnapshot(backtestQuery, (snapshot) => {
+      if (snapshot.empty) {
+        setRunningBacktest(null);
+        return;
+      }
+
+      const data = snapshot.docs[0].data();
+      setRunningBacktest({
+        ...data,
+        backtestId: snapshot.docs[0].id,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        startedAt: data.startedAt?.toDate(),
+        completedAt: data.completedAt?.toDate(),
+        startDate: data.startDate?.toDate() || new Date(),
+        endDate: data.endDate?.toDate() || new Date(),
+        progress: data.progress ? {
+          ...data.progress,
+          startedAt: data.progress.startedAt?.toDate() || new Date(),
+        } : undefined,
+      } as BacktestRun);
     });
 
     return () => unsubscribe();
@@ -103,6 +142,14 @@ export default function FleetPage() {
           Create Bot
         </button>
       </div>
+
+      {/* Running Backtest Progress */}
+      {runningBacktest && (
+        <BacktestProgressPanel 
+          backtest={runningBacktest}
+          botName={bots.find(b => b.botId === runningBacktest.botId)?.name}
+        />
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
