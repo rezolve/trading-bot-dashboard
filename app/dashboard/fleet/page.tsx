@@ -31,7 +31,7 @@ export default function FleetPage() {
     const botsQuery = query(
       collection(db, 'bots'),
       where('userId', '==', user.uid),
-      orderBy('updatedAt', 'desc')
+      orderBy('updatedAt', 'desc'),
     );
 
     const unsubscribe = onSnapshot(botsQuery, (snapshot) => {
