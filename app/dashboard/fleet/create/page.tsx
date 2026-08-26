@@ -156,9 +156,15 @@ export default function CreateBotPage() {
                 onChange={(e) => setFormData({ ...formData, strategyType: e.target.value as any })}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="sma-crossover">SMA Crossover</option>
+                <option value="sma-crossover">SMA Crossover (Stocks)</option>
+                <option value="iron-condor-ai">Iron Condor AI (Options) 🏆 HACKATHON</option>
                 <option value="mean-reversion">Mean Reversion (stub)</option>
               </select>
+              {formData.strategyType === 'iron-condor-ai' && (
+                <p className="text-xs text-yellow-400 mt-2">
+                  🏆 Competition strategy for Alpaca AI Hackathon - requires options level 2+
+                </p>
+              )}
             </div>
 
             <div>

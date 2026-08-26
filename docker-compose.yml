@@ -87,6 +87,27 @@ services:
     networks:
       - bot-network
 
+  # Bot: Hackathon Iron Condor (Competition)
+  bot-hackathon-iron-condor:
+    build:
+      context: ./bots
+      dockerfile: bots/hackathon-iron-condor/Dockerfile
+    environment:
+      - BOT_ID=hackathon-iron-condor
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-demo-test}
+      - FIREBASE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firebase-emulators:8180
+      - FIREBASE_STORAGE_EMULATOR_HOST=firebase-emulators:9199
+      - COMPETITION_ACCOUNT=true
+      - APCA_API_KEY_ID=${APCA_COMPETITION_API_KEY_ID:-${APCA_PAPER_API_KEY_ID}}
+      - APCA_API_SECRET_KEY=${APCA_COMPETITION_API_SECRET_KEY:-${APCA_PAPER_API_SECRET_KEY}}
+      - APCA_API_BASE_URL=https://paper-api.alpaca.markets
+    depends_on:
+      - firebase-emulators
+    restart: unless-stopped
+    networks:
+      - bot-network
+
 networks:
   bot-network:
     driver: bridge
