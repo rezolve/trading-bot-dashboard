@@ -31,11 +31,28 @@ cd functions && npm install && cd ..
 # Copy environment template
 cp .env.example .env.local
 
-# Edit .env.local (optional - works without Alpaca keys for testing)
-# Set APCA_PAPER_API_KEY_ID and APCA_PAPER_API_SECRET_KEY if you have them
+# Edit .env.local - set Firebase demo config for emulators
 ```
 
-**Note**: The system works locally **without** Alpaca keys. Backtests will use sample data, clearly labeled in the UI.
+**Required for local dev** - Edit `.env.local` and add these Firebase demo values:
+
+```bash
+# Firebase Configuration (Demo values for emulator)
+NEXT_PUBLIC_FIREBASE_API_KEY=demo-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-test.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=demo-test.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abcdef123456
+
+# Use Firebase Emulators
+NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true
+
+# Firebase Project ID (for emulators and bots)
+FIREBASE_PROJECT_ID=demo-test
+```
+
+**Note**: Alpaca keys are optional. The system works locally **without** them. Backtests will use sample data, clearly labeled in the UI.
 
 ### 3. Start Everything
 
