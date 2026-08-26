@@ -25,6 +25,7 @@ export interface Account {
 export interface Position {
   id: string;
   userId: string;
+  botId?: string; // Optional for backward compatibility
   symbol: string;
   assetClass: 'stock' | 'option';
   qty: number;
@@ -41,6 +42,7 @@ export interface Position {
 export interface Order {
   id: string;
   userId: string;
+  botId?: string; // Optional for backward compatibility
   clientOrderId: string;
   symbol: string;
   assetClass: 'stock' | 'option';
@@ -124,4 +126,123 @@ export interface MarketStatus {
   isOpen: boolean;
   nextOpen?: string;
   nextClose?: string;
+}
+
+// Fleet Management Types
+
+export type BotStatus = 'draft' | 'backtest' | 'paper' | 'stopped';
+
+export type StrategyType = 'sma-crossover' | 'mean-reversion' | 'custom';
+
+export type SignalType = 'indicator' | 'ml-model' | 'webhook' | 'manual';
+
+export type TriggerType = 'scheduled' | 'price-alert' | 'webhook' | 'manual';
+
+export interface Bot {
+  botId: string;
+  userId: string;
+  name: string;
+  description?: string;
+  status: BotStatus;
+  
+  // Strategy configuration
+  strategy: {
+    type: StrategyType;
+    params: Record<string, any>;
+  };
+  
+  // Signals & Triggers
+  signals: {
+    type: SignalType;
+    config: Record<string, any>;
+  }[];
+  
+  triggers: {
+    type: TriggerType;
+    config: Record<string, any>;
+  }[];
+  
+  // Risk limits
+  riskLimits: {
+    maxNotionalPerOrder: number;
+    maxPositionPercent: number;
+    allowedAssetClasses: ('stock' | 'option')[];
+    maxDailyDrawdown?: number;
+  };
+  
+  // Runtime state
+  paperLive: boolean;
+  containerId?: string;
+  lastBacktestId?: string;
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type BacktestStatus = 'queued' | 'running' | 'completed' | 'failed';
+
+export interface BacktestRun {
+  backtestId: string;
+  botId: string;
+  userId: string;
+  
+  // Parameters
+  startDate: Date;
+  endDate: Date;
+  initialCapital: number;
+  
+  // Status
+  status: BacktestStatus;
+  startedAt?: Date;
+  completedAt?: Date;
+  error?: string;
+  
+  // Results summary
+  summary?: {
+    totalReturn: number;
+    totalReturnPercent: number;
+    sharpeRatio: number;
+    maxDrawdown: number;
+    maxDrawdownPercent: number;
+    winRate: number;
+    totalTrades: number;
+    profitableTrades: number;
+    losingTrades: number;
+    avgWin: number;
+    avgLoss: number;
+    profitFactor: number;
+  };
+  
+  // Storage references
+  reportUrl?: string;
+  equityCurveUrl?: string;
+  tradesUrl?: string;
+  logsUrl?: string;
+  
+  createdAt: Date;
+}
+
+export type BotActivityEventType = 
+  | 'bot_created'
+  | 'bot_updated'
+  | 'bot_deleted'
+  | 'backtest_started'
+  | 'backtest_completed'
+  | 'backtest_failed'
+  | 'swapped_in'
+  | 'swapped_out'
+  | 'trade_executed'
+  | 'position_opened'
+  | 'position_closed'
+  | 'error'
+  | 'warning';
+
+export interface BotActivityEvent {
+  eventId: string;
+  botId: string;
+  userId: string;
+  eventType: BotActivityEventType;
+  message: string;
+  metadata?: Record<string, any>;
+  createdAt: Date;
 }

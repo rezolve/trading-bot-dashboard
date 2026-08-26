@@ -10,12 +10,14 @@ import {
   Settings, 
   Activity, 
   LogOut,
-  TrendingUp
+  TrendingUp,
+  Bot
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 const navigation = [
+  { name: 'Fleet', href: '/dashboard/fleet', icon: Bot },
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Positions', href: '/dashboard/positions', icon: TrendingUp },
   { name: 'Orders', href: '/dashboard/orders', icon: Receipt },
@@ -72,7 +74,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <nav className="flex-1 p-4 space-y-2">
           {navigation.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
             return (
               <Link
                 key={item.name}

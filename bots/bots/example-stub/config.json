@@ -1,0 +1,16 @@
+{
+  "botId": "example-stub",
+  "name": "Example Stub Bot",
+  "description": "Placeholder bot for testing fleet infrastructure",
+  "strategy": {
+    "type": "stub",
+    "params": {}
+  },
+  "signals": [],
+  "triggers": [],
+  "riskLimits": {
+    "maxNotionalPerOrder": 10000,
+    "maxPositionPercent": 20,
+    "allowedAssetClasses": ["stock"]
+  }
+}

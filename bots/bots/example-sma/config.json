@@ -1,0 +1,35 @@
+{
+  "botId": "example-sma",
+  "name": "Example SMA Crossover Bot",
+  "description": "Example bot using SMA crossover strategy (10/30)",
+  "strategy": {
+    "type": "sma-crossover",
+    "params": {
+      "fast_period": 10,
+      "slow_period": 30,
+      "symbol": "SPY",
+      "position_size_pct": 0.20
+    }
+  },
+  "signals": [
+    {
+      "type": "indicator",
+      "config": {
+        "indicator": "sma_crossover"
+      }
+    }
+  ],
+  "triggers": [
+    {
+      "type": "scheduled",
+      "config": {
+        "frequency": "1 minute"
+      }
+    }
+  ],
+  "riskLimits": {
+    "maxNotionalPerOrder": 20000,
+    "maxPositionPercent": 25,
+    "allowedAssetClasses": ["stock"]
+  }
+}

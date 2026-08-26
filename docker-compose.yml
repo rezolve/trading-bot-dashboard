@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # Dashboard (Next.js)
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    ports:
+      - "43123:43123"
+    environment:
+      - NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY}
+      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+      - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+      - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+      - NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID}
+      - NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - firebase-emulators
+    networks:
+      - bot-network
+
+  # Firebase Emulators
+  firebase-emulators:
+    image: node:20
+    working_dir: /app
+    command: >
+      sh -c "npm install -g firebase-tools &&
+             cd /app &&
+             firebase emulators:start --project demo-test"
+    ports:
+      - "9199:9199"  # Auth & Storage
+      - "8180:8180"  # Firestore
+      - "5001:5001"  # Functions
+      - "4100:4100"  # Emulator UI
+    volumes:
+      - .:/app
+    environment:
+      - FIRESTORE_EMULATOR_HOST=0.0.0.0:8180
+      - FIREBASE_AUTH_EMULATOR_HOST=0.0.0.0:9199
+      - FIREBASE_STORAGE_EMULATOR_HOST=0.0.0.0:9199
+    networks:
+      - bot-network
+
+  # Bot: Example SMA
+  bot-example-sma:
+    build:
+      context: ./bots
+      dockerfile: bots/example-sma/Dockerfile
+    environment:
+      - BOT_ID=example-sma
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-demo-test}
+      - FIREBASE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firebase-emulators:8180
+      - FIREBASE_STORAGE_EMULATOR_HOST=firebase-emulators:9199
+      - APCA_API_KEY_ID=${APCA_PAPER_API_KEY_ID}
+      - APCA_API_SECRET_KEY=${APCA_PAPER_API_SECRET_KEY}
+      - APCA_API_BASE_URL=https://paper-api.alpaca.markets
+    depends_on:
+      - firebase-emulators
+    restart: unless-stopped
+    networks:
+      - bot-network
+
+  # Bot: Example Stub
+  bot-example-stub:
+    build:
+      context: ./bots
+      dockerfile: bots/example-stub/Dockerfile
+    environment:
+      - BOT_ID=example-stub
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-demo-test}
+      - FIREBASE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firebase-emulators:8180
+      - FIREBASE_STORAGE_EMULATOR_HOST=firebase-emulators:9199
+      - APCA_API_KEY_ID=${APCA_PAPER_API_KEY_ID}
+      - APCA_API_SECRET_KEY=${APCA_PAPER_API_SECRET_KEY}
+      - APCA_API_BASE_URL=https://paper-api.alpaca.markets
+    depends_on:
+      - firebase-emulators
+    restart: unless-stopped
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge
