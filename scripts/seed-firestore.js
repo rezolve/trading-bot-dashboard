@@ -8,24 +8,25 @@
  */
 
 const { initializeApp } = require('firebase/app');
-const { getFirestore, doc, setDoc, addDoc, collection, connectFirestoreEmulator } = require('firebase/firestore');
+const { getFirestore, doc, setDoc, addDoc, collection } = require('firebase/firestore');
+require('dotenv').config({ path: '.env.local' });
+
+// Load environment variables
+require('dotenv').config({ path: '.env.local' });
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'demo-api-key',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'demo-project.firebaseapp.com',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-alpaca-bot',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'demo-project.appspot.com',
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '123456789',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:123456789:web:abcdef',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Connect to emulator
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-}
+// Do NOT connect to emulator - use production Firebase
 
 async function seedData(userId) {
   console.log(`Seeding data for user: ${userId}`);
