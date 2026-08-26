@@ -26,7 +26,7 @@ if (typeof window !== 'undefined') {
   // Connect to emulators if enabled
   if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
     try {
-      connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true });
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
       connectFirestoreEmulator(db, '127.0.0.1', 8180);
       connectFunctionsEmulator(functions, '127.0.0.1', 5001);
     } catch (error) {

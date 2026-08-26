@@ -4,7 +4,8 @@ import * as admin from 'firebase-admin';
 admin.initializeApp();
 
 const db = admin.firestore();
-const storage = admin.storage();
+// Storage may be used in future for artifact management
+// const storage = admin.storage();
 
 // Paper-only enforcement
 const PAPER_API_URL = 'https://paper-api.alpaca.markets';
@@ -279,7 +280,9 @@ export const webhookTrigger = functions.https.onRequest(async (req, res) => {
     return;
   }
 
-  const { botId, signal, signature } = req.body;
+  const { botId, signal } = req.body;
+  // TODO: Verify signature for webhook authentication
+  // const signature = req.body.signature;
 
   if (!botId || !signal) {
     res.status(400).json({ error: 'Missing botId or signal' });
