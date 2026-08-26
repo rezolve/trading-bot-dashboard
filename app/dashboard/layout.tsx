@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 const navigation = [
-  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'NEW Overview', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Positions', href: '/dashboard/positions', icon: TrendingUp },
   { name: 'Orders', href: '/dashboard/orders', icon: Receipt },
   { name: 'Trade Desk', href: '/dashboard/trade-desk', icon: ListOrdered },
