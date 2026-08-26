@@ -35,20 +35,26 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Cloud Functions helpers
-export const callTriggerBacktest = httpsCallable<
-  { botId: string; startDate: string; endDate: string; initialCapital?: number },
-  { backtestId: string; status: string }
->(functions, 'triggerBacktest');
+// Cloud Functions helpers - wrapped to avoid initialization errors
+export const callTriggerBacktest = (data: { botId: string; startDate: string; endDate: string; initialCapital?: number }) => {
+  return httpsCallable<
+    { botId: string; startDate: string; endDate: string; initialCapital?: number },
+    { backtestId: string; status: string }
+  >(functions, 'triggerBacktest')(data);
+};
 
-export const callSwapInBot = httpsCallable<
-  { botId: string },
-  { success: boolean; botId: string; status: string }
->(functions, 'swapInBot');
+export const callSwapInBot = (data: { botId: string }) => {
+  return httpsCallable<
+    { botId: string },
+    { success: boolean; botId: string; status: string }
+  >(functions, 'swapInBot')(data);
+};
 
-export const callSwapOutBot = httpsCallable<
-  { botId: string },
-  { success: boolean; botId: string; status: string }
->(functions, 'swapOutBot');
+export const callSwapOutBot = (data: { botId: string }) => {
+  return httpsCallable<
+    { botId: string },
+    { success: boolean; botId: string; status: string }
+  >(functions, 'swapOutBot')(data);
+};
 
 export { app, auth, db, functions };

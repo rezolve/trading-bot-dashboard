@@ -12,16 +12,26 @@ export default function CreateBotPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    strategyType: 'sma-crossover' | 'iron-condor-ai' | 'mean-reversion';
+    symbol: string;
+    fastPeriod: number;
+    slowPeriod: number;
+    maxNotionalPerOrder: number;
+    maxPositionPercent: number;
+    allowedAssetClasses: ('stock' | 'option')[];
+  }>({
     name: '',
     description: '',
-    strategyType: 'sma-crossover' as const,
+    strategyType: 'sma-crossover',
     symbol: 'SPY',
     fastPeriod: 10,
     slowPeriod: 30,
     maxNotionalPerOrder: 10000,
     maxPositionPercent: 20,
-    allowedAssetClasses: ['stock'] as ('stock' | 'option')[],
+    allowedAssetClasses: ['stock'],
   });
 
   const handleSubmit = async (e: FormEvent) => {
