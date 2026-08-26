@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { db, callTriggerBacktest, callSwapInBot, callSwapOutBot } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { Bot, BacktestRun, BotActivityEvent } from '@/lib/types';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { 
   ArrowLeft, Play, Pause, Activity, TrendingUp, Settings,
   AlertCircle, Clock, Loader2
@@ -13,9 +13,11 @@ import {
 import { BacktestProgressPanel } from '@/components/backtest-progress-panel';
 import { BacktestResultsSummary } from '@/components/backtest-results-summary';
 
-export default function BotDetailPage({ params }: { params: { botId: string } }) {
+export default function BotDetailPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const botId = params.botId as string;
   const [bot, setBot] = useState<Bot | null>(null);
   const [backtests, setBacktests] = useState<BacktestRun[]>([]);
   const [activity, setActivity] = useState<BotActivityEvent[]>([]);
@@ -24,12 +26,17 @@ export default function BotDetailPage({ params }: { params: { botId: string } })
   const [swapLoading, setSwapLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !botId) return;
 
     const loadBot = async () => {
-      const botDoc = await getDoc(doc(db, 'bots', params.botId));
+      const botDoc = await getDoc(doc(db, 'bots', botId));
       if (botDoc.exists()) {
         const data = botDoc.data();
+        if (data.userId !== user.uid) {
+          setBot(null);
+          setLoading(false);
+          return;
+        }
         setBot({
           ...data,
           botId: botDoc.id,
@@ -45,7 +52,8 @@ export default function BotDetailPage({ params }: { params: { botId: string } })
     // Subscribe to backtests
     const backtestsQuery = query(
       collection(db, 'backtest-runs'),
-      where('botId', '==', params.botId),
+      where('userId', '==', user.uid),
+      where('botId', '==', botId),
       orderBy('createdAt', 'desc'),
       limit(10)
     );
@@ -63,7 +71,8 @@ export default function BotDetailPage({ params }: { params: { botId: string } })
     // Subscribe to activity
     const activityQuery = query(
       collection(db, 'bot-activity'),
-      where('botId', '==', params.botId),
+      where('userId', '==', user.uid),
+      where('botId', '==', botId),
       orderBy('createdAt', 'desc'),
       limit(20)
     );
@@ -80,7 +89,7 @@ export default function BotDetailPage({ params }: { params: { botId: string } })
       unsubBacktests();
       unsubActivity();
     };
-  }, [user, params.botId]);
+  }, [user, botId]);
 
   const handleRunBacktest = async () => {
     if (!bot) return;
