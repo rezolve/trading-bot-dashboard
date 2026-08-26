@@ -79,32 +79,124 @@ export const triggerBacktest = functions.https.onCall(async (data, context) => {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  // For local development with emulators, run backtest synchronously
+  // For local development with emulators, run backtest with step-by-step progress
   // In production, this would trigger a Cloud Run job
   if (process.env.FUNCTIONS_EMULATOR === 'true') {
-    // Simulate backtest execution in emulator
+    // Run backtest simulation asynchronously with progress updates
     setTimeout(async () => {
       try {
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Generate mock backtest results
-        const mockResults = {
-          totalReturn: Math.random() * 10000 - 2000,
-          totalReturnPercent: Math.random() * 20 - 5,
-          sharpeRatio: Math.random() * 2,
-          maxDrawdown: Math.random() * -5000,
-          maxDrawdownPercent: Math.random() * -10,
-          winRate: 0.45 + Math.random() * 0.3,
-          totalTrades: Math.floor(Math.random() * 50) + 10,
-          profitableTrades: Math.floor(Math.random() * 30) + 5,
-          losingTrades: Math.floor(Math.random() * 20) + 5,
-          avgWin: Math.random() * 500 + 100,
-          avgLoss: Math.random() * -300 - 50,
-          profitFactor: 1.2 + Math.random() * 1.5,
+        const logs: string[] = [];
+        const addLog = (msg: string) => {
+          logs.push(`[${new Date().toISOString()}] ${msg}`);
+          if (logs.length > 8) logs.shift(); // Keep last 8
         };
+
+        // STEP 1: Fetching bars
+        addLog('Starting backtest run...');
+        addLog(`Strategy: SMA ${bot?.strategy?.params?.fast_period}/${bot?.strategy?.params?.slow_period} on ${bot?.strategy?.params?.symbol || 'SPY'}`);
+        addLog(`Date range: ${startDate} to ${endDate}`);
         
-        // Update backtest status
+        await backtestRef.update({
+          status: 'running',
+          startedAt: admin.firestore.FieldValue.serverTimestamp(),
+          progress: {
+            step: 'fetching_bars',
+            message: 'Fetching historical bars from Alpaca API (SIP feed)',
+            startedAt: admin.firestore.FieldValue.serverTimestamp(),
+            logs: [...logs],
+          },
+        });
+
+        await db.collection('bot-activity').add({
+          botId,
+          userId,
+          eventType: 'backtest_started',
+          message: 'Fetching historical bars from Alpaca API',
+          metadata: { backtestId, step: 'fetching_bars' },
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // STEP 2: Simulating
+        addLog('✓ Fetched 945 daily bars for SPY');
+        addLog('Initializing strategy with $100,000 capital');
+        addLog('Running simulation with next_open fill model...');
+        
+        await backtestRef.update({
+          progress: {
+            step: 'simulating',
+            message: 'Running backtest simulation (SMA crossover signals)',
+            startedAt: admin.firestore.FieldValue.serverTimestamp(),
+            logs: [...logs],
+          },
+        });
+
+        await db.collection('bot-activity').add({
+          botId,
+          userId,
+          eventType: 'backtest_started',
+          message: 'Running simulation with SMA crossover signals',
+          metadata: { backtestId, step: 'simulating' },
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Generate realistic results
+        const stratReturn = 15.2 + Math.random() * 10; // 15-25%
+        const benchmarkReturn = 28.5; // SPY buy-and-hold ~28.5% from 2021-01-01 to now
+        const mockResults = {
+          totalReturn: (100000 * stratReturn) / 100,
+          totalReturnPercent: stratReturn,
+          sharpeRatio: 0.8 + Math.random() * 0.6,
+          maxDrawdown: -8000 - Math.random() * 4000,
+          maxDrawdownPercent: -8 - Math.random() * 4,
+          winRate: 0.52 + Math.random() * 0.08,
+          totalTrades: 24,
+          profitableTrades: 14,
+          losingTrades: 10,
+          avgWin: 850 + Math.random() * 200,
+          avgLoss: -520 - Math.random() * 100,
+          profitFactor: 1.35 + Math.random() * 0.4,
+          // Benchmark
+          benchmarkReturn: (100000 * benchmarkReturn) / 100,
+          benchmarkReturnPercent: benchmarkReturn,
+          benchmarkSharpe: 1.45,
+          excessReturn: stratReturn - benchmarkReturn,
+        };
+
+        addLog(`✓ Simulation complete: ${mockResults.totalTrades} trades`);
+        addLog(`Strategy return: ${mockResults.totalReturnPercent.toFixed(2)}%`);
+        addLog(`SPY benchmark return: ${mockResults.benchmarkReturnPercent.toFixed(2)}%`);
+        addLog(`Excess return: ${mockResults.excessReturn.toFixed(2)}%`);
+
+        // STEP 3: Writing artifacts
+        await backtestRef.update({
+          progress: {
+            step: 'writing_artifacts',
+            message: 'Writing backtest results and artifacts to storage',
+            startedAt: admin.firestore.FieldValue.serverTimestamp(),
+            logs: [...logs],
+          },
+        });
+
+        await db.collection('bot-activity').add({
+          botId,
+          userId,
+          eventType: 'backtest_started',
+          message: 'Writing backtest artifacts to Cloud Storage',
+          metadata: { backtestId, step: 'writing_artifacts' },
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        addLog('✓ Wrote report.json (2.3 KB)');
+        addLog('✓ Wrote equity_curve.json (18.7 KB)');
+        addLog('✓ Wrote trades.csv (4.1 KB)');
+
+        // STEP 4: Completed
         await backtestRef.update({
           status: 'completed',
           summary: mockResults,
@@ -112,24 +204,28 @@ export const triggerBacktest = functions.https.onCall(async (data, context) => {
           reportUrl: `gs://demo/${userId}/${botId}/${backtestId}/report.json`,
           equityCurveUrl: `gs://demo/${userId}/${botId}/${backtestId}/equity_curve.json`,
           tradesUrl: `gs://demo/${userId}/${botId}/${backtestId}/trades.csv`,
+          progress: {
+            step: 'completed',
+            message: `Backtest completed successfully in ${((Date.now() - Date.now()) / 1000).toFixed(1)}s`,
+            startedAt: admin.firestore.FieldValue.serverTimestamp(),
+            logs: [...logs],
+          },
         });
-        
-        // Update bot status
+
         await botRef.update({
           status: 'backtest',
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        
-        // Log completion
+
         await db.collection('bot-activity').add({
           botId,
           userId,
           eventType: 'backtest_completed',
-          message: `Backtest completed: Return ${mockResults.totalReturnPercent.toFixed(2)}%, Sharpe ${mockResults.sharpeRatio.toFixed(2)}`,
+          message: `Backtest completed: Strategy ${mockResults.totalReturnPercent.toFixed(2)}% vs SPY ${mockResults.benchmarkReturnPercent.toFixed(2)}% | Sharpe ${mockResults.sharpeRatio.toFixed(2)} | ${mockResults.totalTrades} trades`,
           metadata: { backtestId, summary: mockResults },
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        
+
         console.log(`Backtest ${backtestId} completed (emulator simulation)`);
       } catch (error) {
         console.error(`Backtest ${backtestId} failed:`, error);
@@ -137,6 +233,21 @@ export const triggerBacktest = functions.https.onCall(async (data, context) => {
           status: 'failed',
           error: String(error),
           completedAt: admin.firestore.FieldValue.serverTimestamp(),
+          progress: {
+            step: 'failed',
+            message: `Backtest failed: ${String(error)}`,
+            startedAt: admin.firestore.FieldValue.serverTimestamp(),
+            logs: [],
+          },
+        });
+
+        await db.collection('bot-activity').add({
+          botId,
+          userId,
+          eventType: 'backtest_failed',
+          message: `Backtest failed: ${String(error)}`,
+          metadata: { backtestId, error: String(error) },
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
       }
     }, 0);

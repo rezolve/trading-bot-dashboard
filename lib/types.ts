@@ -181,6 +181,21 @@ export interface Bot {
 
 export type BacktestStatus = 'queued' | 'running' | 'completed' | 'failed';
 
+export type BacktestStep = 
+  | 'queued'
+  | 'fetching_bars'
+  | 'simulating'
+  | 'writing_artifacts'
+  | 'completed'
+  | 'failed';
+
+export interface BacktestProgress {
+  step: BacktestStep;
+  message: string;
+  startedAt: Date;
+  logs: string[]; // Last ~8 log lines
+}
+
 export interface BacktestRun {
   backtestId: string;
   botId: string;
@@ -197,7 +212,10 @@ export interface BacktestRun {
   completedAt?: Date;
   error?: string;
   
-  // Results summary
+  // Progress tracking
+  progress?: BacktestProgress;
+  
+  // Results summary (Teaching Five + more)
   summary?: {
     totalReturn: number;
     totalReturnPercent: number;
@@ -211,6 +229,11 @@ export interface BacktestRun {
     avgWin: number;
     avgLoss: number;
     profitFactor: number;
+    // Benchmark comparison (SPY buy-and-hold)
+    benchmarkReturn?: number;
+    benchmarkReturnPercent?: number;
+    benchmarkSharpe?: number;
+    excessReturn?: number; // Strategy return - benchmark return
   };
   
   // Storage references
