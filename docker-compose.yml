@@ -30,7 +30,8 @@ services:
              cd /app &&
              firebase emulators:start --project demo-test"
     ports:
-      - "9199:9199"  # Auth & Storage
+      - "9099:9099"  # Auth
+      - "9199:9199"  # Storage
       - "8180:8180"  # Firestore
       - "5001:5001"  # Functions
       - "4100:4100"  # Emulator UI
@@ -38,7 +39,7 @@ services:
       - .:/app
     environment:
       - FIRESTORE_EMULATOR_HOST=0.0.0.0:8180
-      - FIREBASE_AUTH_EMULATOR_HOST=0.0.0.0:9199
+      - FIREBASE_AUTH_EMULATOR_HOST=0.0.0.0:9099
       - FIREBASE_STORAGE_EMULATOR_HOST=0.0.0.0:9199
     networks:
       - bot-network
