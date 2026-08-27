@@ -156,14 +156,16 @@ export default function BotDetailPage() {
       </div>
 
       {/* Running Backtest Progress */}
-      {backtests.length > 0 && (backtests[0].status === 'running' || backtests[0].status === 'queued') && (
-        <BacktestProgressPanel backtest={backtests[0]} botName={bot.name} />
-      )}
+      {(() => {
+        const runningBacktest = backtests.find(bt => bt.status === 'running' || bt.status === 'queued');
+        return runningBacktest ? <BacktestProgressPanel backtest={runningBacktest} botName={bot.name} /> : null;
+      })()}
 
-      {/* Latest Backtest Results */}
-      {backtests.length > 0 && backtests[0].status === 'completed' && (
-        <BacktestResultsSummary backtest={backtests[0]} />
-      )}
+      {/* Latest Completed Backtest Results */}
+      {(() => {
+        const completedBacktest = backtests.find(bt => bt.status === 'completed' && bt.summary);
+        return completedBacktest ? <BacktestResultsSummary backtest={completedBacktest} /> : null;
+      })()}
 
       {/* Status Card */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">

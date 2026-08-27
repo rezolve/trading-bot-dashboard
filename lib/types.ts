@@ -174,6 +174,16 @@ export interface Bot {
   paperLive: boolean;
   containerId?: string;
   lastBacktestId?: string;
+  lastSummary?: {
+    totalReturn: number;
+    totalReturnPercent: number;
+    finalEquity: number;
+    sharpeRatio: number;
+    maxDrawdownPercent: number;
+    winRate: number;
+    totalTrades: number;
+    initialCapital: number;
+  };
   
   createdAt: Date;
   updatedAt: Date;
