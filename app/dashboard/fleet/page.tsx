@@ -166,6 +166,18 @@ export default function FleetPage() {
     return labels[role] || role;
   };
 
+  const getWindowLabel = (window?: string) => {
+    if (!window) return null;
+    const labels: Record<string, string> = {
+      'open': 'Open',
+      'midday': 'Midday',
+      'close': 'Close',
+      'any': 'Any',
+      'open+midday': 'Open+Midday'
+    };
+    return labels[window] || window;
+  };
+
   const BotCard = ({ bot, showMobileAction }: { bot: Bot; showMobileAction?: 'swapIn' | 'swapOut' }) => {
     const isLive = bot.paperLive || bot.status === 'paper';
     
@@ -194,10 +206,15 @@ export default function FleetPage() {
         </div>
 
         {/* Category & Role badges */}
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="px-2 py-1 bg-blue-500/20 border border-blue-500/50 rounded text-xs font-medium text-blue-400">
             {getCategoryLabel(bot.category)}
           </span>
+          {bot.playbookWindow && (
+            <span className="px-2 py-1 bg-gray-800/50 border border-gray-700/50 rounded text-xs text-gray-500">
+              {getWindowLabel(bot.playbookWindow)}
+            </span>
+          )}
           {bot.role && (
             <span className="px-2 py-1 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-gray-400">
               {getRoleLabel(bot.role)}

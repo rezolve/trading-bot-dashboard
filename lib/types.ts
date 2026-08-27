@@ -136,6 +136,8 @@ export type BotCategory = 'day-trade' | 'swing' | 'position';
 
 export type BotRole = 'alpha' | 'risk-sleeve' | 'benchmark';
 
+export type PlaybookWindow = 'open' | 'midday' | 'close' | 'any' | 'open+midday';
+
 export type StrategyType = 'sma-crossover' | 'mean-reversion' | 'custom';
 
 export type SignalType = 'indicator' | 'ml-model' | 'webhook' | 'manual';
@@ -164,6 +166,7 @@ export interface Bot {
   category: BotCategory;
   role?: BotRole;
   holdsOvernight?: boolean;
+  playbookWindow?: PlaybookWindow;
   
   // Strategy configuration
   strategy: {
