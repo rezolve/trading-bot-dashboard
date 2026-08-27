@@ -19,6 +19,8 @@ export interface Account {
   optionsLevel: number;
   daytradeCount: number;
   patternDayTrader: boolean;
+  lastEquity?: number;
+  dailyPnl?: number;
   updatedAt: Date;
 }
 

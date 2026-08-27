@@ -77,8 +77,18 @@ export default function DashboardPage() {
     };
   }, [user]);
 
-  const todayPL = account ? (account.equity - 100000) : 0;
-  const todayPLPercent = account ? ((account.equity - 100000) / 100000) * 100 : 0;
+  // Today's P&L: use dailyPnl if set, else equity - lastEquity if lastEquity is finite, else null
+  const todayPL = account
+    ? account.dailyPnl !== undefined
+      ? account.dailyPnl
+      : account.lastEquity !== undefined && Number.isFinite(account.lastEquity)
+        ? account.equity - account.lastEquity
+        : null
+    : null;
+
+  const todayPLPercent = todayPL !== null && account?.lastEquity && Number.isFinite(account.lastEquity) && account.lastEquity > 0
+    ? (todayPL / account.lastEquity) * 100
+    : null;
 
   return (
     <div className="space-y-6">
@@ -115,29 +125,31 @@ export default function DashboardPage() {
         </div>
 
         <div className={`bg-gradient-to-br from-gray-900 to-gray-800 border rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow ${
-          todayPL >= 0 ? 'border-green-700 bg-green-900/5' : 'border-red-700 bg-red-900/5'
+          todayPL !== null && todayPL >= 0 ? 'border-green-700 bg-green-900/5' : todayPL !== null ? 'border-red-700 bg-red-900/5' : 'border-gray-700'
         }`}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-gray-400 text-sm font-medium">Today's P&L</span>
             <div className={`p-2 rounded-lg ${
-              todayPL >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'
+              todayPL !== null && todayPL >= 0 ? 'bg-green-500/10' : todayPL !== null ? 'bg-red-500/10' : 'bg-gray-700'
             }`}>
-              {todayPL >= 0 ? (
+              {todayPL !== null && todayPL >= 0 ? (
                 <TrendingUp className="w-5 h-5 text-green-400" />
-              ) : (
+              ) : todayPL !== null ? (
                 <TrendingDown className="w-5 h-5 text-red-400" />
+              ) : (
+                <DollarSign className="w-5 h-5 text-gray-400" />
               )}
             </div>
           </div>
           <p className={`text-3xl font-bold mb-1 ${
-            todayPL >= 0 ? 'text-green-400' : 'text-red-400'
+            todayPL !== null && todayPL >= 0 ? 'text-green-400' : todayPL !== null ? 'text-red-400' : 'text-gray-400'
           }`}>
-            {formatCurrency(todayPL)}
+            {todayPL !== null ? formatCurrency(todayPL) : '—'}
           </p>
           <p className={`text-sm font-semibold ${
-            todayPLPercent >= 0 ? 'text-green-400' : 'text-red-400'
+            todayPLPercent !== null && todayPLPercent >= 0 ? 'text-green-400' : todayPLPercent !== null ? 'text-red-400' : 'text-gray-500'
           }`}>
-            {formatPercent(todayPLPercent)}
+            {todayPLPercent !== null ? formatPercent(todayPLPercent) : '—'}
           </p>
         </div>
 
