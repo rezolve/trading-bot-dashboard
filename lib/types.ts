@@ -138,6 +138,17 @@ export type SignalType = 'indicator' | 'ml-model' | 'webhook' | 'manual';
 
 export type TriggerType = 'scheduled' | 'price-alert' | 'webhook' | 'manual';
 
+export interface BotLastSummary {
+  totalReturn?: number;
+  totalReturnPercent?: number;
+  finalEquity?: number;
+  sharpeRatio?: number;
+  maxDrawdownPercent?: number;
+  winRate?: number;
+  totalTrades?: number;
+  initialCapital?: number;
+}
+
 export interface Bot {
   botId: string;
   userId: string;
@@ -174,16 +185,7 @@ export interface Bot {
   paperLive: boolean;
   containerId?: string;
   lastBacktestId?: string;
-  lastSummary?: {
-    totalReturn: number;
-    totalReturnPercent: number;
-    finalEquity: number;
-    sharpeRatio: number;
-    maxDrawdownPercent: number;
-    winRate: number;
-    totalTrades: number;
-    initialCapital: number;
-  };
+  lastSummary?: BotLastSummary;
   
   createdAt: Date;
   updatedAt: Date;
@@ -229,6 +231,7 @@ export interface BacktestRun {
   summary?: {
     totalReturn: number;
     totalReturnPercent: number;
+    finalEquity?: number;
     sharpeRatio: number;
     maxDrawdown: number;
     maxDrawdownPercent: number;

@@ -14,6 +14,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { BacktestProgressPanel } from '@/components/backtest-progress-panel';
+import { TotalReturnBlock } from '@/components/total-return-block';
 
 export default function FleetPage() {
   const { user } = useAuth();
@@ -172,26 +173,9 @@ export default function FleetPage() {
           <span className="capitalize">{bot.status}</span>
         </div>
 
-        {/* Total Return */}
+        {/* Total Return - always show */}
         <div className="border-t border-gray-800 pt-3 mb-3">
-          <p className="text-xs text-gray-500 mb-1">Total Return</p>
-          {bot.lastSummary ? (
-            <div>
-              <div className="text-lg font-bold text-white">
-                ${bot.lastSummary.finalEquity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
-              <div className="text-xs text-gray-500">
-                from ${bot.lastSummary.initialCapital.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} start
-              </div>
-              <div className={`text-sm font-semibold mt-1 ${
-                bot.lastSummary.totalReturnPercent >= 0 ? 'text-green-400' : 'text-red-400'
-              }`}>
-                {bot.lastSummary.totalReturnPercent >= 0 ? '+' : ''}{bot.lastSummary.totalReturnPercent.toFixed(2)}%
-              </div>
-            </div>
-          ) : (
-            <div className="text-lg text-gray-600">—</div>
-          )}
+          <TotalReturnBlock bot={bot} size="medium" />
         </div>
 
         {/* Mobile tap control */}

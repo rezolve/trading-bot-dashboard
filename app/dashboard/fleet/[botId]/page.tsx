@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { BacktestProgressPanel } from '@/components/backtest-progress-panel';
 import { BacktestResultsSummary } from '@/components/backtest-results-summary';
+import { TotalReturnBlock } from '@/components/total-return-block';
+import { latestCompletedRun, formatReturnCurrency, formatReturnPercent } from '@/lib/backtest-display';
 
 // For static export: generateStaticParams emits '_', so resolve real botId from URL
 function getRealBotId(): string | null {
@@ -163,9 +165,16 @@ export default function BotDetailPage() {
 
       {/* Latest Completed Backtest Results */}
       {(() => {
-        const completedBacktest = backtests.find(bt => bt.status === 'completed' && bt.summary);
+        const completedBacktest = latestCompletedRun(backtests);
         return completedBacktest ? <BacktestResultsSummary backtest={completedBacktest} /> : null;
       })()}
+
+      {/* Total Return - always show even if no completed backtest */}
+      {!latestCompletedRun(backtests) && (
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <TotalReturnBlock bot={bot} size="large" />
+        </div>
+      )}
 
       {/* Status Card */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
@@ -202,46 +211,63 @@ export default function BotDetailPage() {
           <p className="text-gray-400 text-center py-8">No backtests yet</p>
         ) : (
           <div className="space-y-3">
-            {backtests.map((bt) => (
-              <div key={bt.backtestId} className="bg-gray-800 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-white font-medium">{bt.backtestId}</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    bt.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                    bt.status === 'failed' ? 'bg-red-500/20 text-red-400' :
-                    'bg-blue-500/20 text-blue-400'
-                  }`}>
-                    {bt.status}
-                  </span>
-                </div>
-                {bt.summary && (
-                  <div className="grid grid-cols-4 gap-4 text-sm">
+            {backtests.map((bt) => {
+              // Calculate duration in days
+              const durationMs = bt.endDate.getTime() - bt.startDate.getTime();
+              const durationDays = Math.round(durationMs / (1000 * 60 * 60 * 24));
+              
+              return (
+                <div key={bt.backtestId} className="bg-gray-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="text-gray-500">Return</p>
-                      <p className="text-white font-medium">
-                        {bt.summary.totalReturnPercent.toFixed(2)}%
-                      </p>
+                      <span className="text-white font-medium">{bt.backtestId}</span>
+                      <span className="text-gray-500 text-xs ml-3">
+                        {durationDays} days ({bt.startDate.toLocaleDateString()} - {bt.endDate.toLocaleDateString()})
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-gray-500">Sharpe</p>
-                      <p className="text-white font-medium">
-                        {bt.summary.sharpeRatio.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Win Rate</p>
-                      <p className="text-white font-medium">
-                        {(bt.summary.winRate * 100).toFixed(1)}%
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Trades</p>
-                      <p className="text-white font-medium">{bt.summary.totalTrades}</p>
-                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      bt.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                      bt.status === 'failed' ? 'bg-red-500/20 text-red-400' :
+                      'bg-blue-500/20 text-blue-400'
+                    }`}>
+                      {bt.status}
+                    </span>
                   </div>
-                )}
-              </div>
-            ))}
+                  {bt.summary && (
+                    <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Return</p>
+                        <p className="text-white font-medium">
+                          {formatReturnCurrency(
+                            bt.summary.finalEquity || 
+                            ((bt.initialCapital || 100000) + (bt.summary.totalReturn || 0))
+                          )}
+                        </p>
+                        <p className="text-gray-400 text-xs">
+                          {formatReturnPercent(bt.summary.totalReturnPercent)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Sharpe</p>
+                        <p className="text-white font-medium">
+                          {bt.summary.sharpeRatio?.toFixed(2) ?? '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Win Rate</p>
+                        <p className="text-white font-medium">
+                          {bt.summary.winRate != null ? `${(bt.summary.winRate * 100).toFixed(1)}%` : '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Trades</p>
+                        <p className="text-white font-medium">{bt.summary.totalTrades ?? 0}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
