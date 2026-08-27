@@ -8,7 +8,6 @@ import { Bot, BacktestRun } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { 
   Bot as BotIcon,
-  Plus,
   Play,
   Pause,
   Activity,
@@ -132,15 +131,8 @@ export default function FleetPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Bot Fleet</h1>
-          <p className="text-gray-400">Manage your trading bot fleet</p>
+          <p className="text-gray-400">Monitor and control your trading bot fleet</p>
         </div>
-        <button
-          onClick={() => router.push('/dashboard/fleet/create')}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Create Bot
-        </button>
       </div>
 
       {/* Running Backtest Progress */}
@@ -221,20 +213,11 @@ export default function FleetPage() {
           <h3 className="text-xl font-semibold text-white mb-2">
             {filter === 'all' ? 'No bots yet' : `No ${filter} bots`}
           </h3>
-          <p className="text-gray-400 mb-6">
+          <p className="text-gray-400">
             {filter === 'all'
-              ? 'Create your first bot to get started'
-              : `You don't have any ${filter} bots`}
+              ? 'Bots are created and managed by the Trading Bot agent. Once created, they will appear here for monitoring and control.'
+              : `You don't have any ${filter} bots at the moment.`}
           </p>
-          {filter === 'all' && (
-            <button
-              onClick={() => router.push('/dashboard/fleet/create')}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors inline-flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              Create Your First Bot
-            </button>
-          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
