@@ -10,7 +10,8 @@ import {
   Settings, 
   Activity, 
   LogOut,
-  TrendingUp
+  TrendingUp,
+  Beaker
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -20,6 +21,7 @@ const navigation = [
   { name: 'Positions', href: '/dashboard/positions', icon: TrendingUp },
   { name: 'Orders', href: '/dashboard/orders', icon: Receipt },
   { name: 'Trade Desk', href: '/dashboard/trade-desk', icon: ListOrdered },
+  { name: 'Research', href: '/dashboard/research', icon: Beaker },
   { name: 'Bot Settings', href: '/dashboard/settings', icon: Settings },
   { name: 'Activity Log', href: '/dashboard/activity', icon: Activity },
 ];
@@ -115,7 +117,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h2 className="text-3xl font-black text-white">
-                {navigation.find((item) => item.href === pathname)?.name || 'Dashboard'}
+                {navigation.find((item) => pathname === item.href || pathname?.startsWith(item.href + '/'))?.name || 'Dashboard'}
               </h2>
             </div>
             <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/40 rounded-xl shadow-lg shadow-yellow-500/10">
