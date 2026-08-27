@@ -56,29 +56,53 @@ export function BacktestResultsSummary({ backtest }: BacktestResultsSummaryProps
             </div>
             <div className="space-y-2">
               <div>
-                <div className="text-3xl font-black text-white">
-                  {summary.totalReturnPercent.toFixed(2)}%
-                </div>
-                <div className="text-xs text-gray-500">Strategy Performance</div>
+                {(() => {
+                  const start = backtest.initialCapital || 100000;
+                  const ended = start + (summary.totalReturn || 0);
+                  return (
+                    <>
+                      <div className="text-3xl font-black text-white">
+                        ${ended.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        from ${start.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} start
+                      </div>
+                      <div className={cn(
+                        'text-sm font-semibold mt-1',
+                        summary.totalReturnPercent >= 0 ? 'text-green-400' : 'text-red-400'
+                      )}>
+                        {summary.totalReturnPercent >= 0 ? '+' : ''}{summary.totalReturnPercent.toFixed(2)}%
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
               
-              {summary.benchmarkReturnPercent !== undefined && (
+              {summary.benchmarkReturnPercent !== undefined && summary.benchmarkReturn !== undefined && (
                 <div className="pt-2 border-t border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">SPY Benchmark:</span>
-                    <span className="text-sm font-semibold text-gray-300">
-                      {summary.benchmarkReturnPercent.toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-gray-500">Excess Return:</span>
-                    <span className={cn(
-                      'text-sm font-bold',
-                      outperformed ? 'text-green-400' : 'text-red-400'
-                    )}>
-                      {outperformed ? '+' : ''}{summary.excessReturn?.toFixed(2)}%
-                    </span>
-                  </div>
+                  {(() => {
+                    const start = backtest.initialCapital || 100000;
+                    const spyEnded = start + (summary.benchmarkReturn || 0);
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-400">SPY would be:</span>
+                          <span className="text-sm font-semibold text-gray-300">
+                            ${spyEnded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-gray-500">Excess Return:</span>
+                          <span className={cn(
+                            'text-sm font-bold',
+                            outperformed ? 'text-green-400' : 'text-red-400'
+                          )}>
+                            {outperformed ? '+' : ''}{summary.excessReturn?.toFixed(2)}%
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>
