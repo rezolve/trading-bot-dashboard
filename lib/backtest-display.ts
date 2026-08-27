@@ -31,17 +31,20 @@ export function pickReturnSnapshot(
   let endingValue: number | undefined;
   let startValue: number | undefined;
 
+  // Get initialCapital if available (from BotLastSummary)
+  const initialCapital = 'initialCapital' in summary ? summary.initialCapital : undefined;
+  
   // Prefer finalEquity if available
   if (summary.finalEquity !== undefined) {
     endingValue = summary.finalEquity;
-    startValue = summary.initialCapital ?? 100000; // Document default start
-  } else if (summary.totalReturn !== undefined && summary.initialCapital !== undefined) {
+    startValue = initialCapital ?? 100000; // Document default start
+  } else if (summary.totalReturn !== undefined && initialCapital !== undefined) {
     // Calculate from totalReturn + initialCapital
-    startValue = summary.initialCapital;
+    startValue = initialCapital;
     endingValue = startValue + summary.totalReturn;
   } else if (summary.totalReturnPercent !== undefined) {
     // Derive from percent (only if we have initialCapital or can use documented default)
-    startValue = summary.initialCapital ?? 100000; // Documented default
+    startValue = initialCapital ?? 100000; // Documented default
     endingValue = startValue * (1 + summary.totalReturnPercent / 100);
   }
 

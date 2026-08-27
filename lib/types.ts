@@ -232,6 +232,12 @@ export interface BacktestRun {
   endDate: Date;
   initialCapital: number;
   
+  // Research fields (optional)
+  familyId?: string;
+  experimentId?: string;
+  generation?: number;
+  split?: BacktestSplit;
+  
   // Status
   status: BacktestStatus;
   startedAt?: Date;
@@ -294,5 +300,63 @@ export interface BotActivityEvent {
   eventType: BotActivityEventType;
   message: string;
   metadata?: Record<string, any>;
+  createdAt: Date;
+}
+
+// Research Module Types
+
+export type ResearchBook = 'day-trade' | 'swing' | 'position' | 'orb';
+export type ResearchAssetClass = 'stock' | 'option';
+export type ResearchSide = 'long' | 'short' | 'both';
+export type ExperimentStatus = 'queued' | 'scored' | 'kept' | 'killed';
+export type IdeaCritic = 'keep' | 'kill' | 'rewrite' | null;
+export type IdeaStatus = 'new' | 'queued_experiment' | 'rejected';
+export type BacktestSplit = 'in_sample' | 'holdout' | 'full';
+
+export interface ResearchFamily {
+  familyId: string;
+  userId: string;
+  name: string;
+  book: ResearchBook;
+  assetClass: ResearchAssetClass;
+  side: ResearchSide;
+  holdsOvernight: boolean;
+  championBotId?: string;
+  benchmark?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ResearchExperiment {
+  experimentId: string;
+  familyId: string;
+  userId: string;
+  parentBotId?: string;
+  hypothesis: string;
+  tweak: Record<string, any>;
+  killRule?: string;
+  inSampleStart?: Date;
+  inSampleEnd?: Date;
+  holdoutStart?: Date;
+  holdoutEnd?: Date;
+  status: ExperimentStatus;
+  generation?: number;
+  inSampleReturn?: number;
+  inSampleReturnPercent?: number;
+  holdoutReturn?: number;
+  holdoutReturnPercent?: number;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+export interface ResearchIdea {
+  ideaId: string;
+  familyId: string;
+  userId: string;
+  sourceUrl?: string;
+  paramDiff?: Record<string, any>;
+  killRule?: string;
+  critic: IdeaCritic;
+  status: IdeaStatus;
   createdAt: Date;
 }

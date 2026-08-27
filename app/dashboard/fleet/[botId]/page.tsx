@@ -323,8 +323,3 @@ export default function BotDetailPage() {
     </div>
   );
 }
-
-// For static export: emit placeholder path, real botId resolved from window.location
-export function generateStaticParams() {
-  return [{ botId: '_' }];
-}

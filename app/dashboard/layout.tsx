@@ -13,13 +13,15 @@ import {
   TrendingUp,
   Bot,
   Menu,
-  X
+  X,
+  FlaskConical
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Fleet', href: '/dashboard/fleet', icon: Bot },
+  { name: 'Research', href: '/dashboard/research', icon: FlaskConical },
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Positions', href: '/dashboard/positions', icon: TrendingUp },
   { name: 'Orders', href: '/dashboard/orders', icon: Receipt },
