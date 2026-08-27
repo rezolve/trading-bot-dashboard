@@ -37,10 +37,19 @@ export function BacktestResultsSummary({ backtest }: BacktestResultsSummaryProps
 
       {/* The Teaching Five */}
       <div>
-        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <Award className="w-6 h-6 text-blue-400" />
-          Performance Summary
-        </h3>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <Award className="w-6 h-6 text-blue-400" />
+              Performance Summary
+            </h3>
+            {backtest.startDate && backtest.endDate && (
+              <p className="text-gray-400 text-sm mt-1">
+                Sample Window: {backtest.startDate.toLocaleDateString('en-US', { timeZone: 'America/New_York' })} → {backtest.endDate.toLocaleDateString('en-US', { timeZone: 'America/New_York' })} (ET)
+              </p>
+            )}
+          </div>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* 1. Total Return vs Benchmark */}

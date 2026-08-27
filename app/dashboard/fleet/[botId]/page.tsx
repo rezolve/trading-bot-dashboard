@@ -232,13 +232,15 @@ export default function BotDetailPage() {
               return (
                 <div key={bt.backtestId} className="bg-gray-800 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="text-white font-medium">{bt.backtestId}</span>
-                      <span className="text-gray-500 text-xs ml-3">
-                        {durationDays} days ({bt.startDate.toLocaleDateString()} - {bt.endDate.toLocaleDateString()})
-                      </span>
+                    <div className="flex-1">
+                      <div className="text-white font-medium mb-1">{bt.backtestId}</div>
+                      {bt.startDate && bt.endDate && (
+                        <div className="text-gray-400 text-xs">
+                          Sample Window: {bt.startDate.toLocaleDateString('en-US', { timeZone: 'America/New_York' })} → {bt.endDate.toLocaleDateString('en-US', { timeZone: 'America/New_York' })} ({durationDays} days, ET)
+                        </div>
+                      )}
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
                       bt.status === 'completed' ? 'bg-green-500/20 text-green-400' :
                       bt.status === 'failed' ? 'bg-red-500/20 text-red-400' :
                       'bg-blue-500/20 text-blue-400'
