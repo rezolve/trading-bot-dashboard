@@ -1,14 +1,20 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import { defineSecret } from 'firebase-functions/params';
 
 admin.initializeApp();
 
 const db = admin.firestore();
-// Storage may be used in future for artifact management
-// const storage = admin.storage();
+
+// Secret Manager for Alpaca paper API keys
+// Set with: firebase functions:secrets:set APCA_PAPER_API_KEY_ID
+// Set with: firebase functions:secrets:set APCA_PAPER_API_SECRET_KEY
+const APCA_PAPER_API_KEY_ID = defineSecret('APCA_PAPER_API_KEY_ID');
+const APCA_PAPER_API_SECRET_KEY = defineSecret('APCA_PAPER_API_SECRET_KEY');
 
 // Paper-only enforcement
 const PAPER_API_URL = 'https://paper-api.alpaca.markets';
+const DATA_API_URL = 'https://data.alpaca.markets';
 
 function validatePaperOnly(apiUrl: string): void {
   if (!apiUrl.toLowerCase().includes('paper')) {
@@ -17,6 +23,176 @@ function validatePaperOnly(apiUrl: string): void {
       'LIVE API ENDPOINT DETECTED - Only paper trading is allowed'
     );
   }
+  // Explicitly refuse live API
+  if (apiUrl.toLowerCase().includes('https://api.alpaca.markets')) {
+    throw new functions.https.HttpsError(
+      'failed-precondition',
+      'LIVE API REFUSED - This function only supports paper trading'
+    );
+  }
+}
+
+// Alpaca REST API helpers (paper-only)
+interface AlpacaBar {
+  t: string;
+  o: number;
+  h: number;
+  l: number;
+  c: number;
+  v: number;
+}
+
+interface AlpacaPosition {
+  symbol: string;
+  qty: string;
+  side: 'long' | 'short';
+  market_value: string;
+  avg_entry_price: string;
+}
+
+async function fetchSIPBars(
+  symbol: string,
+  timeframe: '1Min' | '1Day',
+  start: string,
+  end: string,
+  apiKeyId: string,
+  apiSecret: string
+): Promise<AlpacaBar[]> {
+  const url = `${DATA_API_URL}/v2/stocks/${symbol}/bars?timeframe=${timeframe}&start=${start}&end=${end}&feed=sip&limit=1000`;
+  
+  const response = await fetch(url, {
+    headers: {
+      'APCA-API-KEY-ID': apiKeyId,
+      'APCA-API-SECRET-KEY': apiSecret,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Alpaca Data API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.bars || [];
+}
+
+async function getAccount(apiKeyId: string, apiSecret: string): Promise<any> {
+  const response = await fetch(`${PAPER_API_URL}/v2/account`, {
+    headers: {
+      'APCA-API-KEY-ID': apiKeyId,
+      'APCA-API-SECRET-KEY': apiSecret,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Alpaca Account API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function getPositions(apiKeyId: string, apiSecret: string): Promise<AlpacaPosition[]> {
+  const response = await fetch(`${PAPER_API_URL}/v2/positions`, {
+    headers: {
+      'APCA-API-KEY-ID': apiKeyId,
+      'APCA-API-SECRET-KEY': apiSecret,
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) return [];
+    throw new Error(`Alpaca Positions API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function placeOrder(
+  symbol: string,
+  qty: number,
+  side: 'buy' | 'sell',
+  clientOrderId: string,
+  apiKeyId: string,
+  apiSecret: string
+): Promise<any> {
+  validatePaperOnly(PAPER_API_URL);
+
+  const response = await fetch(`${PAPER_API_URL}/v2/orders`, {
+    method: 'POST',
+    headers: {
+      'APCA-API-KEY-ID': apiKeyId,
+      'APCA-API-SECRET-KEY': apiSecret,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      symbol,
+      qty,
+      side,
+      type: 'market',
+      time_in_force: 'day',
+      client_order_id: clientOrderId,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Alpaca Order API error: ${response.status} ${errorText}`);
+  }
+
+  return response.json();
+}
+
+async function closeAllPositions(apiKeyId: string, apiSecret: string): Promise<any> {
+  validatePaperOnly(PAPER_API_URL);
+
+  const response = await fetch(`${PAPER_API_URL}/v2/positions?cancel_orders=true`, {
+    method: 'DELETE',
+    headers: {
+      'APCA-API-KEY-ID': apiKeyId,
+      'APCA-API-SECRET-KEY': apiSecret,
+    },
+  });
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`Alpaca Close Positions error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// Market hours helpers (America/New_York)
+function isMarketHours(): boolean {
+  const now = new Date();
+  const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const day = etTime.getDay();
+  const hour = etTime.getHours();
+  const minute = etTime.getMinutes();
+  const time = hour * 60 + minute;
+
+  // Weekdays only (Mon-Fri)
+  if (day === 0 || day === 6) return false;
+
+  // 09:30 - 15:55 ET
+  const marketOpen = 9 * 60 + 30;
+  const marketClose = 15 * 60 + 55;
+
+  return time >= marketOpen && time < marketClose;
+}
+
+function isFlattenTime(): boolean {
+  const now = new Date();
+  const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const day = etTime.getDay();
+  const hour = etTime.getHours();
+  const minute = etTime.getMinutes();
+  const time = hour * 60 + minute;
+
+  // Weekdays only
+  if (day === 0 || day === 6) return false;
+
+  // 15:50 ET (5 minutes before close)
+  const flattenTime = 15 * 60 + 50;
+
+  return time >= flattenTime && time < flattenTime + 10; // 10-minute window
 }
 
 /**
@@ -436,12 +612,41 @@ export const webhookTrigger = functions.https.onRequest(async (req, res) => {
 
 /**
  * Scheduled check - runs every minute during market hours
- * Monitors paper-live bots and processes scheduled triggers
+ * LIVE-SHAPED PAPER EXECUTION PATH
+ * 
+ * NOTE: SIP websocket is out of scope (Functions cannot hold it).
+ * This 1-min poll is the v1 live shape for paper trading.
+ * 
+ * Secret Manager keys:
+ * - APCA_PAPER_API_KEY_ID
+ * - APCA_PAPER_API_SECRET_KEY
+ * Set with: firebase functions:secrets:set APCA_PAPER_API_KEY_ID
  */
-export const scheduledCheck = functions.pubsub
-  .schedule('every 1 minutes')
+export const scheduledCheck = functions
+  .runWith({ secrets: [APCA_PAPER_API_KEY_ID, APCA_PAPER_API_SECRET_KEY] })
+  .pubsub.schedule('every 1 minutes')
   .onRun(async (context) => {
-    // Get all paper-live bots
+    const checkTimestamp = new Date().toISOString();
+
+    // Market hours check
+    if (!isMarketHours()) {
+      console.log(`Market closed at ${checkTimestamp} - no trading`);
+      return null;
+    }
+
+    // Get API keys from Secret Manager
+    const apiKeyId = APCA_PAPER_API_KEY_ID.value();
+    const apiSecret = APCA_PAPER_API_SECRET_KEY.value();
+
+    if (!apiKeyId || !apiSecret) {
+      console.error('Missing Alpaca API keys in Secret Manager');
+      return null;
+    }
+
+    // Paper-only enforcement
+    validatePaperOnly(PAPER_API_URL);
+
+    // Get all day-trade paper-live bots
     const botsSnapshot = await db
       .collection('bots')
       .where('paperLive', '==', true)
@@ -452,41 +657,155 @@ export const scheduledCheck = functions.pubsub
       return null;
     }
 
-    const checkTimestamp = new Date().toISOString();
-    console.log(`Checking ${botsSnapshot.size} paper-live bots at ${checkTimestamp}`);
+    console.log(`RTH worker checking ${botsSnapshot.size} paper-live bots at ${checkTimestamp}`);
 
-    // Process each bot
-    const promises = botsSnapshot.docs.map(async (doc) => {
+    // Filter for day-trade bots only (or holdsOvernight==false)
+    const dayTradeBots = botsSnapshot.docs.filter((doc) => {
+      const bot = doc.data();
+      return bot.category === 'day-trade' || bot.holdsOvernight === false;
+    });
+
+    if (dayTradeBots.length === 0) {
+      console.log('No day-trade bots to process');
+      return null;
+    }
+
+    console.log(`Processing ${dayTradeBots.length} day-trade bots`);
+
+    // Process each day-trade bot
+    const promises = dayTradeBots.map(async (doc) => {
       const bot = doc.data();
       const botId = doc.id;
 
       try {
-        // Check for scheduled triggers
-        const scheduledTriggers = (bot.triggers || []).filter(
-          (t: any) => t.type === 'scheduled'
-        );
+        // MINIMAL FIRST STRATEGY: ORB 15m SPY long-only
+        // After 9:45, if SPY breaks above opening range high AND SMA10>SMA30 daily
+        
+        const now = new Date();
+        const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const hour = etTime.getHours();
+        const minute = etTime.getMinutes();
 
-        if (scheduledTriggers.length > 0) {
-          // Log heartbeat
+        // Only after 9:45 ET
+        if (hour < 9 || (hour === 9 && minute < 45)) {
+          console.log(`Bot ${botId}: Before 9:45 ET, skipping ORB check`);
+          return;
+        }
+
+        // Fetch 1Min SPY bars for opening range (09:30-09:45)
+        const todayStr = etTime.toISOString().split('T')[0];
+        const orbStart = `${todayStr}T09:30:00-04:00`;
+        const orbEnd = `${todayStr}T09:45:00-04:00`;
+
+        const orbBars = await fetchSIPBars('SPY', '1Min', orbStart, orbEnd, apiKeyId, apiSecret);
+
+        if (orbBars.length === 0) {
+          console.log(`Bot ${botId}: No ORB bars for SPY`);
+          return;
+        }
+
+        // Calculate opening range high/low
+        const orbHigh = Math.max(...orbBars.map((b) => b.h));
+        const orbLow = Math.min(...orbBars.map((b) => b.l));
+
+        console.log(`Bot ${botId}: ORB high=${orbHigh}, low=${orbLow}`);
+
+        // Fetch daily SPY bars for SMA10/SMA30 gate (last 60 days)
+        const sixtyDaysAgo = new Date(etTime);
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        const dailyStart = sixtyDaysAgo.toISOString().split('T')[0];
+
+        const dailyBars = await fetchSIPBars('SPY', '1Day', dailyStart, todayStr, apiKeyId, apiSecret);
+
+        if (dailyBars.length < 30) {
+          console.log(`Bot ${botId}: Not enough daily bars for SMA (${dailyBars.length})`);
+          return;
+        }
+
+        const closes = dailyBars.map((b) => b.c);
+        const sma10 = closes.slice(-10).reduce((a, b) => a + b, 0) / 10;
+        const sma30 = closes.slice(-30).reduce((a, b) => a + b, 0) / 30;
+        const smaBullish = sma10 > sma30;
+
+        console.log(`Bot ${botId}: SMA10=${sma10.toFixed(2)}, SMA30=${sma30.toFixed(2)}, bullish=${smaBullish}`);
+
+        // Log signal even if no order
+        await db.collection('bot-activity').add({
+          botId,
+          userId: bot.userId,
+          eventType: 'warning',
+          message: `ORB signal: high=${orbHigh.toFixed(2)}, low=${orbLow.toFixed(2)}, SMA bullish=${smaBullish}`,
+          metadata: { orbHigh, orbLow, sma10, sma30, smaBullish, timestamp: checkTimestamp },
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // Check if already in position
+        const positions = await getPositions(apiKeyId, apiSecret);
+        const hasSPY = positions.some((p) => p.symbol === 'SPY');
+
+        if (hasSPY) {
+          console.log(`Bot ${botId}: Already holding SPY, no new order`);
+          return;
+        }
+
+        // Fetch current SPY price
+        const currentBars = await fetchSIPBars('SPY', '1Min', orbEnd, etTime.toISOString(), apiKeyId, apiSecret);
+        if (currentBars.length === 0) {
+          console.log(`Bot ${botId}: No current SPY bars`);
+          return;
+        }
+
+        const currentPrice = currentBars[currentBars.length - 1].c;
+
+        // Entry signal: current price > ORB high AND SMA bullish
+        if (currentPrice > orbHigh && smaBullish) {
+          console.log(`Bot ${botId}: ORB breakout signal! price=${currentPrice} > high=${orbHigh}`);
+
+          // Get account equity for position sizing
+          const account = await getAccount(apiKeyId, apiSecret);
+          const equity = parseFloat(account.equity);
+          const maxNotional = Math.min(10000, equity * 0.10); // $10k or 10% of equity
+          const qty = Math.floor(maxNotional / currentPrice);
+
+          if (qty < 1) {
+            console.log(`Bot ${botId}: Position size < 1 share, skipping`);
+            return;
+          }
+
+          // Place paper order
+          const clientOrderId = `${botId}-${Date.now()}`;
+          const order = await placeOrder('SPY', qty, 'buy', clientOrderId, apiKeyId, apiSecret);
+
+          console.log(`Bot ${botId}: Placed BUY SPY x${qty} @ market, order=${order.id}`);
+
+          // Log order activity
           await db.collection('bot-activity').add({
             botId,
             userId: bot.userId,
-            eventType: 'warning',
-            message: 'Scheduled check - bot is alive',
-            metadata: { timestamp: checkTimestamp, triggerCount: scheduledTriggers.length },
+            eventType: 'position_opened',
+            message: `ORB breakout: BUY SPY x${qty} @ ${currentPrice.toFixed(2)} (ORB high ${orbHigh.toFixed(2)})`,
+            metadata: {
+              symbol: 'SPY',
+              qty,
+              price: currentPrice,
+              orderId: order.id,
+              clientOrderId,
+              signal: 'orb_breakout',
+              timestamp: checkTimestamp,
+            },
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
           });
+        } else {
+          console.log(`Bot ${botId}: No entry signal (price=${currentPrice}, high=${orbHigh}, bullish=${smaBullish})`);
         }
-
-        // TODO: In production, this would check bot health and trigger strategy evaluation
       } catch (error) {
-        console.error(`Error checking bot ${botId}:`, error);
-        
+        console.error(`Error processing bot ${botId}:`, error);
+
         await db.collection('bot-activity').add({
           botId,
           userId: bot.userId,
           eventType: 'error',
-          message: `Scheduled check error: ${error}`,
+          message: `RTH worker error: ${error}`,
           metadata: { timestamp: checkTimestamp, error: String(error) },
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -494,7 +813,106 @@ export const scheduledCheck = functions.pubsub
     });
 
     await Promise.all(promises);
+    console.log(`RTH worker completed at ${checkTimestamp}`);
     return null;
+  });
+
+/**
+ * Flatten all positions - runs at 15:50 ET weekdays
+ * Hard no-overnight rule enforcement
+ */
+export const flattenEOD = functions
+  .runWith({ secrets: [APCA_PAPER_API_KEY_ID, APCA_PAPER_API_SECRET_KEY] })
+  .pubsub.schedule('50 15 * * 1-5')
+  .timeZone('America/New_York')
+  .onRun(async (context) => {
+    const flattenTimestamp = new Date().toISOString();
+    console.log(`Flatten EOD triggered at ${flattenTimestamp}`);
+
+    // Get API keys from Secret Manager
+    const apiKeyId = APCA_PAPER_API_KEY_ID.value();
+    const apiSecret = APCA_PAPER_API_SECRET_KEY.value();
+
+    if (!apiKeyId || !apiSecret) {
+      console.error('Missing Alpaca API keys in Secret Manager');
+      return null;
+    }
+
+    // Paper-only enforcement
+    validatePaperOnly(PAPER_API_URL);
+
+    try {
+      // Get all positions before closing
+      const positions = await getPositions(apiKeyId, apiSecret);
+
+      if (positions.length === 0) {
+        console.log('No positions to flatten');
+        return null;
+      }
+
+      console.log(`Flattening ${positions.length} positions`);
+
+      // Close all positions
+      await closeAllPositions(apiKeyId, apiSecret);
+
+      console.log(`Closed all positions at ${flattenTimestamp}`);
+
+      // Log to lineup-snapshots collection
+      await db.collection('lineup-snapshots').add({
+        reason: 'flatten-eod',
+        positionsCount: positions.length,
+        positions: positions.map((p) => ({
+          symbol: p.symbol,
+          qty: p.qty,
+          side: p.side,
+          marketValue: p.market_value,
+        })),
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Log activity for each day-trade bot
+      const botsSnapshot = await db
+        .collection('bots')
+        .where('paperLive', '==', true)
+        .get();
+
+      const activityPromises = botsSnapshot.docs
+        .filter((doc) => {
+          const bot = doc.data();
+          return bot.category === 'day-trade' || bot.holdsOvernight === false;
+        })
+        .map((doc) => {
+          const bot = doc.data();
+          const botId = doc.id;
+
+          return db.collection('bot-activity').add({
+            botId,
+            userId: bot.userId,
+            eventType: 'position_closed',
+            message: `EOD flatten: closed all positions (hard no-overnight rule)`,
+            metadata: {
+              reason: 'flatten-eod',
+              positionsCount: positions.length,
+              timestamp: flattenTimestamp,
+            },
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        });
+
+      await Promise.all(activityPromises);
+
+      return null;
+    } catch (error) {
+      console.error('Flatten EOD error:', error);
+
+      await db.collection('lineup-snapshots').add({
+        reason: 'flatten-eod-error',
+        error: String(error),
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return null;
+    }
   });
 
 /**
