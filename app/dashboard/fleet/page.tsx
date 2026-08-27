@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { db, callSwapInBot, callSwapOutBot } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
-import { Bot, BacktestRun } from '@/lib/types';
+import { Bot, BacktestRun, BotCategory } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { 
   Bot as BotIcon,
@@ -24,6 +24,7 @@ export default function FleetPage() {
   const [loading, setLoading] = useState(true);
   const [draggedBotId, setDraggedBotId] = useState<string | null>(null);
   const [paperMode, setPaperMode] = useState<'PAPER' | 'LIVE'>('PAPER');
+  const [categoryFilter, setCategoryFilter] = useState<BotCategory | 'all'>('all');
 
   useEffect(() => {
     if (!user) return;
@@ -89,8 +90,13 @@ export default function FleetPage() {
     return () => unsubscribe();
   }, [user]);
 
-  const benchBots = bots.filter(bot => !bot.paperLive && bot.status !== 'paper');
-  const liveBots = bots.filter(bot => bot.paperLive || bot.status === 'paper');
+  // Apply category filter
+  const filteredBots = categoryFilter === 'all' 
+    ? bots 
+    : bots.filter(bot => bot.category === categoryFilter);
+
+  const benchBots = filteredBots.filter(bot => !bot.paperLive && bot.status !== 'paper');
+  const liveBots = filteredBots.filter(bot => bot.paperLive || bot.status === 'paper');
 
   const handleSwapIn = async (botId: string) => {
     try {
@@ -141,6 +147,25 @@ export default function FleetPage() {
     setDraggedBotId(null);
   };
 
+  const getCategoryLabel = (category: BotCategory) => {
+    const labels: Record<BotCategory, string> = {
+      'day-trade': 'Day trade',
+      'swing': 'Swing',
+      'position': 'Position'
+    };
+    return labels[category] || category;
+  };
+
+  const getRoleLabel = (role?: string) => {
+    if (!role) return null;
+    const labels: Record<string, string> = {
+      'alpha': 'Alpha',
+      'risk-sleeve': 'Sleeve',
+      'benchmark': 'Benchmark'
+    };
+    return labels[role] || role;
+  };
+
   const BotCard = ({ bot, showMobileAction }: { bot: Bot; showMobileAction?: 'swapIn' | 'swapOut' }) => {
     const isLive = bot.paperLive || bot.status === 'paper';
     
@@ -165,6 +190,18 @@ export default function FleetPage() {
             <div className="ml-2 px-2 py-1 bg-green-500/20 border border-green-500/50 rounded text-xs font-bold text-green-400 whitespace-nowrap">
               LIVE
             </div>
+          )}
+        </div>
+
+        {/* Category & Role badges */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="px-2 py-1 bg-blue-500/20 border border-blue-500/50 rounded text-xs font-medium text-blue-400">
+            {getCategoryLabel(bot.category)}
+          </span>
+          {bot.role && (
+            <span className="px-2 py-1 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-gray-400">
+              {getRoleLabel(bot.role)}
+            </span>
           )}
         </div>
 
@@ -263,6 +300,50 @@ export default function FleetPage() {
           </div>
           <p className="text-2xl font-bold text-green-400">{liveBots.length}</p>
         </div>
+      </div>
+
+      {/* Category Filter Chips */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setCategoryFilter('all')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+            categoryFilter === 'all'
+              ? 'bg-blue-600 text-white border border-blue-500'
+              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+          }`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => setCategoryFilter('day-trade')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+            categoryFilter === 'day-trade'
+              ? 'bg-blue-600 text-white border border-blue-500'
+              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+          }`}
+        >
+          Day trade
+        </button>
+        <button
+          onClick={() => setCategoryFilter('swing')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+            categoryFilter === 'swing'
+              ? 'bg-blue-600 text-white border border-blue-500'
+              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+          }`}
+        >
+          Swing
+        </button>
+        <button
+          onClick={() => setCategoryFilter('position')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+            categoryFilter === 'position'
+              ? 'bg-blue-600 text-white border border-blue-500'
+              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+          }`}
+        >
+          Position
+        </button>
       </div>
 
       {/* Two-Column Board */}

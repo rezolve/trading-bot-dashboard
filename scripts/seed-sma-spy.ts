@@ -36,6 +36,8 @@ async function seedSmaSpy() {
     name: 'SMA SPY',
     description: 'SMA 10/30 crossover on SPY - 1Day timeframe with SIP feed',
     status: 'draft',
+    category: 'day-trade',
+    holdsOvernight: false,
     
     strategy: {
       type: 'sma-crossover',

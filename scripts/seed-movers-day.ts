@@ -52,6 +52,9 @@ async function seedMoversDay() {
     name: 'Movers Day-Trade Book',
     description: 'Gap-and-go continuation scanner on liquid market movers. Hard rule: never hold overnight. PAPER ONLY.',
     status: 'draft',
+    category: 'day-trade',
+    role: 'alpha',
+    holdsOvernight: false,
     
     strategy: {
       type: 'gap-and-go',

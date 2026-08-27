@@ -132,6 +132,10 @@ export interface MarketStatus {
 
 export type BotStatus = 'draft' | 'backtest' | 'paper' | 'stopped';
 
+export type BotCategory = 'day-trade' | 'swing' | 'position';
+
+export type BotRole = 'alpha' | 'risk-sleeve' | 'benchmark';
+
 export type StrategyType = 'sma-crossover' | 'mean-reversion' | 'custom';
 
 export type SignalType = 'indicator' | 'ml-model' | 'webhook' | 'manual';
@@ -155,6 +159,11 @@ export interface Bot {
   name: string;
   description?: string;
   status: BotStatus;
+  
+  // Category & Role
+  category: BotCategory;
+  role?: BotRole;
+  holdsOvernight?: boolean;
   
   // Strategy configuration
   strategy: {

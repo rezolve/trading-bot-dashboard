@@ -178,10 +178,23 @@ export default function BotDetailPage() {
 
       {/* Status Card */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <div>
             <p className="text-gray-400 text-sm mb-2">Status</p>
             <p className="text-white font-bold text-lg">{bot.status.toUpperCase()}</p>
+          </div>
+          <div>
+            <p className="text-gray-400 text-sm mb-2">Category</p>
+            <div className="flex flex-col gap-1">
+              <span className="px-2 py-1 bg-blue-500/20 border border-blue-500/50 rounded text-xs font-medium text-blue-400 inline-block w-fit">
+                {bot.category === 'day-trade' ? 'Day trade' : bot.category === 'swing' ? 'Swing' : 'Position'}
+              </span>
+              {bot.role && (
+                <span className="px-2 py-1 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-gray-400 inline-block w-fit">
+                  {bot.role === 'alpha' ? 'Alpha' : bot.role === 'risk-sleeve' ? 'Sleeve' : 'Benchmark'}
+                </span>
+              )}
+            </div>
           </div>
           <div>
             <p className="text-gray-400 text-sm mb-2">Strategy</p>
