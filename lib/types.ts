@@ -132,7 +132,7 @@ export interface MarketStatus {
 
 export type BotStatus = 'draft' | 'backtest' | 'paper' | 'stopped';
 
-export type BotCategory = 'day-trade' | 'swing' | 'position';
+export type BotCategory = 'day-trade' | 'swing' | 'position' | 'orb';
 
 export type BotRole = 'alpha' | 'risk-sleeve' | 'benchmark';
 

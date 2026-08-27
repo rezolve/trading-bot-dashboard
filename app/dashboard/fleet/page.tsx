@@ -149,6 +149,7 @@ export default function FleetPage() {
 
   const getCategoryLabel = (category: BotCategory) => {
     const labels: Record<BotCategory, string> = {
+      'orb': 'ORB',
       'day-trade': 'Day trade',
       'swing': 'Swing',
       'position': 'Position'
@@ -321,46 +322,25 @@ export default function FleetPage() {
 
       {/* Category Filter Chips */}
       <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setCategoryFilter('all')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-            categoryFilter === 'all'
-              ? 'bg-blue-600 text-white border border-blue-500'
-              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => setCategoryFilter('day-trade')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-            categoryFilter === 'day-trade'
-              ? 'bg-blue-600 text-white border border-blue-500'
-              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
-          }`}
-        >
-          Day trade
-        </button>
-        <button
-          onClick={() => setCategoryFilter('swing')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-            categoryFilter === 'swing'
-              ? 'bg-blue-600 text-white border border-blue-500'
-              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
-          }`}
-        >
-          Swing
-        </button>
-        <button
-          onClick={() => setCategoryFilter('position')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-            categoryFilter === 'position'
-              ? 'bg-blue-600 text-white border border-blue-500'
-              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
-          }`}
-        >
-          Position
-        </button>
+        {[
+          ['all', 'All'],
+          ['orb', 'ORB'],
+          ['day-trade', 'Day trade'],
+          ['swing', 'Swing'],
+          ['position', 'Position']
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            onClick={() => setCategoryFilter(value as BotCategory | 'all')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+              categoryFilter === value
+                ? 'bg-blue-600 text-white border border-blue-500'
+                : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Two-Column Board */}
