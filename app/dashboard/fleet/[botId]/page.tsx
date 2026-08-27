@@ -13,7 +13,7 @@ import {
 import { BacktestProgressPanel } from '@/components/backtest-progress-panel';
 import { BacktestResultsSummary } from '@/components/backtest-results-summary';
 import { TotalReturnBlock } from '@/components/total-return-block';
-import { latestCompletedRun, formatReturnCurrency, formatReturnPercent } from '@/lib/backtest-display';
+import { latestCompletedRun, formatReturnCurrency, formatReturnPercent, backtestDurationLabel } from '@/lib/backtest-display';
 
 // For static export: generateStaticParams emits '_', so resolve real botId from URL
 function getRealBotId(): string | null {
@@ -225,18 +225,16 @@ export default function BotDetailPage() {
         ) : (
           <div className="space-y-3">
             {backtests.map((bt) => {
-              // Calculate duration in days
-              const durationMs = bt.endDate.getTime() - bt.startDate.getTime();
-              const durationDays = Math.round(durationMs / (1000 * 60 * 60 * 24));
+              const durationLabel = backtestDurationLabel(bt.startDate, bt.endDate);
               
               return (
                 <div key={bt.backtestId} className="bg-gray-800 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex-1">
                       <div className="text-white font-medium mb-1">{bt.backtestId}</div>
-                      {bt.startDate && bt.endDate && (
+                      {durationLabel && (
                         <div className="text-gray-400 text-xs">
-                          Sample Window: {bt.startDate.toLocaleDateString('en-US', { timeZone: 'America/New_York' })} → {bt.endDate.toLocaleDateString('en-US', { timeZone: 'America/New_York' })} ({durationDays} days, ET)
+                          {durationLabel}
                         </div>
                       )}
                     </div>

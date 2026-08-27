@@ -1,5 +1,5 @@
 import { Bot, BacktestRun } from '@/lib/types';
-import { pickReturnSnapshot, formatReturnCurrency, formatReturnPercent } from '@/lib/backtest-display';
+import { pickReturnSnapshot, formatReturnCurrency, formatReturnPercent, backtestDurationLabel } from '@/lib/backtest-display';
 import { cn } from '@/lib/utils';
 
 interface TotalReturnBlockProps {
@@ -15,6 +15,11 @@ interface TotalReturnBlockProps {
  */
 export function TotalReturnBlock({ bot, latestRun, size = 'medium' }: TotalReturnBlockProps) {
   const snapshot = pickReturnSnapshot(bot, latestRun);
+  
+  // Get duration from latestRun if present, else from bot.lastSummary
+  const startDate = latestRun?.startDate ?? bot.lastSummary?.startDate;
+  const endDate = latestRun?.endDate ?? bot.lastSummary?.endDate;
+  const durationLabel = backtestDurationLabel(startDate, endDate);
 
   const sizeClasses = {
     small: {
@@ -58,6 +63,11 @@ export function TotalReturnBlock({ bot, latestRun, size = 'medium' }: TotalRetur
               snapshot.returnPercent >= 0 ? 'text-green-400' : 'text-red-400'
             )}>
               {formatReturnPercent(snapshot.returnPercent)}
+            </div>
+          )}
+          {durationLabel && (
+            <div className={`text-gray-500 mt-1 ${classes.caption}`}>
+              {durationLabel}
             </div>
           )}
         </div>

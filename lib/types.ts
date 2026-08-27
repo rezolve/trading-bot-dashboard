@@ -153,6 +153,8 @@ export interface BotLastSummary {
   winRate?: number;
   totalTrades?: number;
   initialCapital?: number;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export interface Bot {

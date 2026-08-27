@@ -3,6 +3,7 @@
 import { BacktestRun } from '@/lib/types';
 import { TrendingUp, TrendingDown, Target, Award, Activity, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { backtestDurationLabel } from '@/lib/backtest-display';
 
 interface BacktestResultsSummaryProps {
   backtest: BacktestRun;
@@ -15,6 +16,7 @@ export function BacktestResultsSummary({ backtest }: BacktestResultsSummaryProps
 
   const { summary } = backtest;
   const outperformed = (summary.excessReturn || 0) > 0;
+  const durationLabel = backtestDurationLabel(backtest.startDate, backtest.endDate);
 
   return (
     <div className="space-y-6">
@@ -43,9 +45,9 @@ export function BacktestResultsSummary({ backtest }: BacktestResultsSummaryProps
               <Award className="w-6 h-6 text-blue-400" />
               Performance Summary
             </h3>
-            {backtest.startDate && backtest.endDate && (
+            {durationLabel && (
               <p className="text-gray-400 text-sm mt-1">
-                Sample Window: {backtest.startDate.toLocaleDateString('en-US', { timeZone: 'America/New_York' })} → {backtest.endDate.toLocaleDateString('en-US', { timeZone: 'America/New_York' })} (ET)
+                {durationLabel}
               </p>
             )}
           </div>
