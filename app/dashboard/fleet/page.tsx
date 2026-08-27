@@ -224,7 +224,7 @@ export default function FleetPage() {
           {filteredBots.map((bot) => (
             <div
               key={bot.botId}
-              onClick={() => router.push(`/dashboard/fleet/${bot.botId}`)}
+              onClick={() => router.push(`/dashboard/fleet/${bot.botId}/`)}
               className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-blue-500/50 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between mb-4">

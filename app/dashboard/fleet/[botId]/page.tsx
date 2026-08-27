@@ -13,11 +13,23 @@ import {
 import { BacktestProgressPanel } from '@/components/backtest-progress-panel';
 import { BacktestResultsSummary } from '@/components/backtest-results-summary';
 
+// For static export: generateStaticParams emits '_', so resolve real botId from URL
+function getRealBotId(): string | null {
+  if (typeof window === 'undefined') return null;
+  const segments = window.location.pathname.split('/').filter(Boolean);
+  const fleetIndex = segments.indexOf('fleet');
+  if (fleetIndex >= 0 && segments.length > fleetIndex + 1) {
+    const id = segments[fleetIndex + 1];
+    return id === '_' ? null : id;
+  }
+  return null;
+}
+
 export default function BotDetailPage() {
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const botId = params.botId as string;
+  const [botId, setBotId] = useState<string | null>(null);
   const [bot, setBot] = useState<Bot | null>(null);
   const [backtests, setBacktests] = useState<BacktestRun[]>([]);
   const [activity, setActivity] = useState<BotActivityEvent[]>([]);
@@ -25,8 +37,22 @@ export default function BotDetailPage() {
   const [backtestLoading, setBacktestLoading] = useState(false);
   const [swapLoading, setSwapLoading] = useState(false);
 
+  // Resolve real botId from URL path (ignore '_' from generateStaticParams)
   useEffect(() => {
-    if (!user || !botId) return;
+    const realBotId = getRealBotId();
+    if (realBotId) {
+      setBotId(realBotId);
+    } else {
+      // Fallback to params if we're not in browser yet
+      const paramBotId = params.botId as string;
+      if (paramBotId && paramBotId !== '_') {
+        setBotId(paramBotId);
+      }
+    }
+  }, [params.botId]);
+
+  useEffect(() => {
+    if (!user || !botId || botId === '_') return;
 
     const loadBot = async () => {
       const botDoc = await getDoc(doc(db, 'bots', botId));
@@ -373,4 +399,9 @@ export default function BotDetailPage() {
       </div>
     </div>
   );
+}
+
+// For static export: emit placeholder path, real botId resolved from window.location
+export function generateStaticParams() {
+  return [{ botId: '_' }];
 }
