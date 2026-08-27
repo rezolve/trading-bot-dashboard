@@ -1,0 +1,35 @@
+{
+  "botId": "bot_orb_spy",
+  "name": "ORB SPY",
+  "description": "Opening Range Breakout on SPY using SIP websocket 1-minute bars. Goes long on first break above 09:30-09:45 range high when SMA10>SMA30. Flattens before 15:55 ET. Paper only.",
+  "strategy": {
+    "type": "opening_range_breakout",
+    "symbol": "SPY",
+    "openingRangeStart": "09:30",
+    "openingRangeEnd": "09:45",
+    "timeframe": "1Min",
+    "feed": "sip",
+    "smaFilter": {
+      "enabled": true,
+      "fast": 10,
+      "slow": 30
+    },
+    "flattenTime": "15:55"
+  },
+  "riskLimits": {
+    "maxPositionPercent": 10,
+    "maxNotional": 10000,
+    "allowedAssetClasses": ["us_equity"]
+  },
+  "signals": {
+    "primary": "range_breakout",
+    "filter": "sma_crossover"
+  },
+  "triggers": {
+    "websocket": true,
+    "realtime": true
+  },
+  "paperOnly": true,
+  "runtime": "python",
+  "entrypoint": "bots/runtime/orb_sip_ws.py"
+}
