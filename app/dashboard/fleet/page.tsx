@@ -2,19 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { db } from '@/lib/firebase';
+import { db, callSwapInBot, callSwapOutBot } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { Bot, BacktestRun } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { 
   Bot as BotIcon,
-  Play,
-  Pause,
-  Activity,
-  TrendingUp,
   AlertCircle,
-  CheckCircle,
-  Clock
+  Lock,
+  ArrowRight,
+  RotateCcw
 } from 'lucide-react';
 import { BacktestProgressPanel } from '@/components/backtest-progress-panel';
 
@@ -24,7 +21,8 @@ export default function FleetPage() {
   const [bots, setBots] = useState<Bot[]>([]);
   const [runningBacktest, setRunningBacktest] = useState<BacktestRun | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'draft' | 'paper' | 'stopped'>('all');
+  const [draggedBotId, setDraggedBotId] = useState<string | null>(null);
+  const [paperMode, setPaperMode] = useState<'PAPER' | 'LIVE'>('PAPER');
 
   useEffect(() => {
     if (!user) return;
@@ -90,30 +88,121 @@ export default function FleetPage() {
     return () => unsubscribe();
   }, [user]);
 
-  const filteredBots = filter === 'all' 
-    ? bots 
-    : bots.filter(bot => bot.status === filter);
+  const benchBots = bots.filter(bot => !bot.paperLive && bot.status !== 'paper');
+  const liveBots = bots.filter(bot => bot.paperLive || bot.status === 'paper');
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      draft: 'bg-gray-500/20 text-gray-400 border-gray-500/50',
-      backtest: 'bg-blue-500/20 text-blue-400 border-blue-500/50',
-      paper: 'bg-green-500/20 text-green-400 border-green-500/50 animate-pulse',
-      stopped: 'bg-red-500/20 text-red-400 border-red-500/50',
-    };
+  const handleSwapIn = async (botId: string) => {
+    try {
+      await callSwapInBot({ botId });
+    } catch (error) {
+      console.error('Error swapping in bot:', error);
+      alert('Failed to swap in bot');
+    }
+  };
 
-    const icons = {
-      draft: <Clock className="w-3 h-3" />,
-      backtest: <Activity className="w-3 h-3" />,
-      paper: <Play className="w-3 h-3" />,
-      stopped: <Pause className="w-3 h-3" />,
-    };
+  const handleSwapOut = async (botId: string) => {
+    try {
+      await callSwapOutBot({ botId });
+    } catch (error) {
+      console.error('Error swapping out bot:', error);
+      alert('Failed to swap out bot');
+    }
+  };
 
+  // Desktop drag handlers
+  const handleDragStart = (e: React.DragEvent, botId: string) => {
+    setDraggedBotId(botId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBotId(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDropOnLive = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (draggedBotId) {
+      handleSwapIn(draggedBotId);
+    }
+    setDraggedBotId(null);
+  };
+
+  const handleDropOnBench = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (draggedBotId) {
+      handleSwapOut(draggedBotId);
+    }
+    setDraggedBotId(null);
+  };
+
+  const BotCard = ({ bot, showMobileAction }: { bot: Bot; showMobileAction?: 'swapIn' | 'swapOut' }) => {
+    const isLive = bot.paperLive || bot.status === 'paper';
+    
     return (
-      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${styles[status as keyof typeof styles]}`}>
-        {icons[status as keyof typeof icons]}
-        {status.toUpperCase()}
-      </span>
+      <div
+        draggable
+        onDragStart={(e) => handleDragStart(e, bot.botId)}
+        onDragEnd={handleDragEnd}
+        className={`bg-gray-900 border rounded-lg p-4 cursor-move hover:border-blue-500/50 transition-colors ${
+          draggedBotId === bot.botId ? 'opacity-50' : ''
+        } ${isLive ? 'border-green-500/30' : 'border-gray-800'}`}
+      >
+        <div className="flex items-start justify-between mb-3">
+          <div 
+            className="flex-1 cursor-pointer"
+            onClick={() => router.push(`/dashboard/fleet/${bot.botId}/`)}
+          >
+            <h3 className="text-base md:text-lg font-semibold text-white mb-1">{bot.name}</h3>
+            <p className="text-xs md:text-sm text-gray-400 line-clamp-2">{bot.description}</p>
+          </div>
+          {isLive && (
+            <div className="ml-2 px-2 py-1 bg-green-500/20 border border-green-500/50 rounded text-xs font-bold text-green-400 whitespace-nowrap">
+              LIVE
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+          <span>{bot.strategy.type}</span>
+          <span className="capitalize">{bot.status}</span>
+        </div>
+
+        {/* Mobile tap control */}
+        {showMobileAction && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (showMobileAction === 'swapIn') {
+                handleSwapIn(bot.botId);
+              } else {
+                handleSwapOut(bot.botId);
+              }
+            }}
+            className={`md:hidden w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors min-h-[44px] ${
+              showMobileAction === 'swapIn'
+                ? 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-white'
+            }`}
+          >
+            {showMobileAction === 'swapIn' ? (
+              <>
+                <ArrowRight className="w-4 h-4" />
+                Send to Live
+              </>
+            ) : (
+              <>
+                <RotateCcw className="w-4 h-4" />
+                Return to Bench
+              </>
+            )}
+          </button>
+        )}
+      </div>
     );
   };
 
@@ -128,11 +217,11 @@ export default function FleetPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Bot Fleet</h1>
-          <p className="text-sm md:text-base text-gray-400">Monitor and control your trading bot fleet</p>
-        </div>
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Bot Fleet</h1>
+        <p className="text-sm md:text-base text-gray-400">
+          Drag bots to Live to start paper trading (desktop) or use tap controls (mobile)
+        </p>
       </div>
 
       {/* Running Backtest Progress */}
@@ -144,7 +233,7 @@ export default function FleetPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-gray-400 text-sm">Total Bots</span>
@@ -155,136 +244,139 @@ export default function FleetPage() {
 
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
+            <span className="text-gray-400 text-sm">On Bench</span>
+            <BotIcon className="w-5 h-5 text-gray-400" />
+          </div>
+          <p className="text-2xl font-bold text-gray-400">{benchBots.length}</p>
+        </div>
+
+        <div className="bg-gray-900 border border-green-500/30 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-gray-400 text-sm">Paper Live</span>
-            <Play className="w-5 h-5 text-green-400" />
+            <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></div>
           </div>
-          <p className="text-2xl font-bold text-green-400">
-            {bots.filter(b => b.status === 'paper').length}
-          </p>
-        </div>
-
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-400 text-sm">Ready to Deploy</span>
-            <CheckCircle className="w-5 h-5 text-blue-400" />
-          </div>
-          <p className="text-2xl font-bold text-blue-400">
-            {bots.filter(b => b.status === 'backtest').length}
-          </p>
-        </div>
-
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-400 text-sm">Drafts</span>
-            <Clock className="w-5 h-5 text-gray-400" />
-          </div>
-          <p className="text-2xl font-bold text-gray-400">
-            {bots.filter(b => b.status === 'draft').length}
-          </p>
+          <p className="text-2xl font-bold text-green-400">{liveBots.length}</p>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-gray-800 overflow-x-auto">
-        {['all', 'draft', 'backtest', 'paper', 'stopped'].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f as typeof filter)}
-            className={`px-4 py-3 font-medium transition-colors whitespace-nowrap min-h-[44px] ${
-              filter === f
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-            {f !== 'all' && (
-              <span className="ml-2 text-xs">
-                ({bots.filter(b => b.status === f).length})
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Two-Column Board */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Bench Column */}
+        <div
+          onDragOver={handleDragOver}
+          onDrop={handleDropOnBench}
+          className="space-y-4"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white">Bench</h2>
+            <span className="text-sm text-gray-500">{benchBots.length} bots</span>
+          </div>
 
-      {/* Bots List */}
-      {filteredBots.length === 0 ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-12 text-center">
-          <BotIcon className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">
-            {filter === 'all' ? 'No bots yet' : `No ${filter} bots`}
-          </h3>
-          <p className="text-gray-400">
-            {filter === 'all'
-              ? 'Bots are created and managed by the Trading Bot agent. Once created, they will appear here for monitoring and control.'
-              : `You don't have any ${filter} bots at the moment.`}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {filteredBots.map((bot) => (
-            <div
-              key={bot.botId}
-              onClick={() => router.push(`/dashboard/fleet/${bot.botId}/`)}
-              className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-blue-500/50 transition-colors cursor-pointer"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-semibold text-white">{bot.name}</h3>
-                    {getStatusBadge(bot.status)}
-                    {bot.paperLive && (
-                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded border border-yellow-500/50">
-                        PAPER
-                      </span>
-                    )}
-                  </div>
-                  {bot.description && (
-                    <p className="text-gray-400 text-sm">{bot.description}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div className="bg-gray-900/50 border-2 border-dashed border-gray-800 rounded-lg min-h-[400px] p-4">
+            {benchBots.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-center">
                 <div>
-                  <p className="text-gray-500 text-xs mb-1">Strategy</p>
-                  <p className="text-white font-medium">{bot.strategy.type}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs mb-1">Signals</p>
-                  <p className="text-white font-medium">{bot.signals.length}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs mb-1">Triggers</p>
-                  <p className="text-white font-medium">{bot.triggers.length}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs mb-1">Last Updated</p>
-                  <p className="text-white font-medium">
-                    {new Date(bot.updatedAt).toLocaleDateString()}
+                  <BotIcon className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400">No bots on bench</p>
+                  <p className="text-gray-600 text-sm mt-1">
+                    All bots are paper-live or will appear here when returned to bench
                   </p>
                 </div>
               </div>
-
-              {bot.lastBacktestId && (
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>Last backtest: {bot.lastBacktestId}</span>
-                </div>
-              )}
-            </div>
-          ))}
+            ) : (
+              <div className="space-y-3">
+                {benchBots.map((bot) => (
+                  <BotCard key={bot.botId} bot={bot} showMobileAction="swapIn" />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Paper Trading Warning */}
-      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+        {/* Live Column */}
+        <div
+          onDragOver={handleDragOver}
+          onDrop={handleDropOnLive}
+          className="space-y-4"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              Live
+              <div className="px-3 py-1 bg-yellow-500/20 border border-yellow-500/50 rounded text-xs font-bold text-yellow-400">
+                PAPER
+              </div>
+            </h2>
+
+            {/* Paper/Live Toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPaperMode('PAPER')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors min-h-[44px] ${
+                  paperMode === 'PAPER'
+                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
+                    : 'bg-gray-800 text-gray-500 border border-gray-700'
+                }`}
+              >
+                PAPER
+              </button>
+              <button
+                disabled
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-800 text-gray-600 border border-gray-700 cursor-not-allowed flex items-center gap-1 min-h-[44px]"
+                title="Real-money live trading is disabled"
+              >
+                <Lock className="w-3 h-3" />
+                LIVE
+              </button>
+            </div>
+          </div>
+
+          {/* Live Mode Notice */}
+          {paperMode === 'LIVE' && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex items-start gap-2">
+              <Lock className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-400 text-sm font-semibold">Live Trading Disabled</p>
+                <p className="text-red-400/80 text-xs mt-1">
+                  Real-money live trading is off until explicitly enabled
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-gray-900/50 border-2 border-dashed border-green-500/30 rounded-lg min-h-[400px] p-4">
+            {liveBots.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-center">
+                <div>
+                  <AlertCircle className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400">No bots paper-live</p>
+                  <p className="text-gray-600 text-sm mt-1">
+                    Drag bots here (desktop) or tap "Send to Live" (mobile)
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {liveBots.map((bot) => (
+                  <BotCard key={bot.botId} bot={bot} showMobileAction="swapOut" />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Help Text */}
+      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-yellow-400 font-semibold mb-1">Paper Trading Only</h4>
-            <p className="text-yellow-400/80 text-sm">
-              All bots use Alpaca's paper trading environment. No real money is at risk.
-            </p>
+            <h4 className="text-blue-400 font-semibold mb-1">How It Works</h4>
+            <ul className="text-blue-400/80 text-sm space-y-1">
+              <li><strong>Desktop:</strong> Drag bots between columns to start/stop paper trading</li>
+              <li><strong>Mobile:</strong> Use "Send to Live" / "Return to Bench" buttons on each card</li>
+              <li><strong>Paper Only:</strong> All trading is Alpaca paper mode. Real-money live is disabled.</li>
+              <li><strong>Backtests:</strong> Trading Bot agent runs backtests. View results in bot detail pages.</li>
+            </ul>
           </div>
         </div>
       </div>

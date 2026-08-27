@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { db, callTriggerBacktest, callSwapInBot, callSwapOutBot } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { Bot, BacktestRun, BotActivityEvent } from '@/lib/types';
 import { useRouter, useParams } from 'next/navigation';
 import { 
-  ArrowLeft, Play, Pause, Activity, TrendingUp, Settings,
-  AlertCircle, Clock, Loader2
+  ArrowLeft, Activity, TrendingUp, Settings,
+  AlertCircle, Clock
 } from 'lucide-react';
 import { BacktestProgressPanel } from '@/components/backtest-progress-panel';
 import { BacktestResultsSummary } from '@/components/backtest-results-summary';
@@ -34,8 +34,6 @@ export default function BotDetailPage() {
   const [backtests, setBacktests] = useState<BacktestRun[]>([]);
   const [activity, setActivity] = useState<BotActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [backtestLoading, setBacktestLoading] = useState(false);
-  const [swapLoading, setSwapLoading] = useState(false);
 
   // Resolve real botId from URL path (ignore '_' from generateStaticParams)
   useEffect(() => {
@@ -117,65 +115,6 @@ export default function BotDetailPage() {
     };
   }, [user, botId]);
 
-  const handleRunBacktest = async () => {
-    if (!bot) return;
-    
-    setBacktestLoading(true);
-    try {
-      // Default to last 60 days
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 60);
-      
-      const result = await callTriggerBacktest({
-        botId: bot.botId,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        initialCapital: 100000,
-      });
-      
-      console.log('Backtest started:', result.data);
-      // Backtest will appear in the list via onSnapshot
-    } catch (error: any) {
-      console.error('Error starting backtest:', error);
-      alert(`Failed to start backtest: ${error.message || 'Unknown error'}`);
-    } finally {
-      setBacktestLoading(false);
-    }
-  };
-
-  const handleSwapIn = async () => {
-    if (!bot) return;
-    
-    setSwapLoading(true);
-    try {
-      const result = await callSwapInBot({ botId: bot.botId });
-      console.log('Bot swapped in:', result.data);
-      // Status will update via onSnapshot
-    } catch (error: any) {
-      console.error('Error swapping in bot:', error);
-      alert(`Failed to swap in bot: ${error.message || 'Unknown error'}`);
-    } finally {
-      setSwapLoading(false);
-    }
-  };
-
-  const handleSwapOut = async () => {
-    if (!bot) return;
-    
-    setSwapLoading(true);
-    try {
-      const result = await callSwapOutBot({ botId: bot.botId });
-      console.log('Bot swapped out:', result.data);
-      // Status will update via onSnapshot
-    } catch (error: any) {
-      console.error('Error swapping out bot:', error);
-      alert(`Failed to swap out bot: ${error.message || 'Unknown error'}`);
-    } finally {
-      setSwapLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -213,63 +152,6 @@ export default function BotDetailPage() {
             <h1 className="text-3xl font-bold text-white mb-2">{bot.name}</h1>
             <p className="text-gray-400">{bot.description || 'No description'}</p>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleRunBacktest}
-            disabled={backtestLoading}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center gap-2"
-          >
-            {backtestLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Running...
-              </>
-            ) : (
-              <>
-                <TrendingUp className="w-5 h-5" />
-                Run Backtest
-              </>
-            )}
-          </button>
-          
-          {bot.status === 'paper' ? (
-            <button
-              onClick={handleSwapOut}
-              disabled={swapLoading}
-              className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center gap-2"
-            >
-              {swapLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Swapping...
-                </>
-              ) : (
-                <>
-                  <Pause className="w-5 h-5" />
-                  Swap Out
-                </>
-              )}
-            </button>
-          ) : (
-            <button
-              onClick={handleSwapIn}
-              disabled={bot.status === 'draft' || swapLoading}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center gap-2"
-            >
-              {swapLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Swapping...
-                </>
-              ) : (
-                <>
-                  <Play className="w-5 h-5" />
-                  Swap In
-                </>
-              )}
-            </button>
-          )}
         </div>
       </div>
 
