@@ -125,3 +125,37 @@ export interface MarketStatus {
   nextOpen?: string;
   nextClose?: string;
 }
+
+export type ResearchBook = 'day-trade' | 'swing' | 'position' | 'orb' | 'news';
+
+export interface ResearchFamily {
+  id: string;
+  name: string;
+  book: ResearchBook;
+  champion?: string;
+  lastHoldoutEndingDollar?: number;
+  generationCount?: number;
+  startDate?: Date;
+  endDate?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ResearchExperiment {
+  id: string;
+  familyId: string;
+  generation: number;
+  status: 'draft' | 'running' | 'completed' | 'failed';
+  startedAt?: Date;
+  completedAt?: Date;
+  metrics?: Record<string, any>;
+  createdAt: Date;
+}
+
+export interface ResearchIdea {
+  id: string;
+  familyId: string;
+  description: string;
+  status: 'pending' | 'tested' | 'rejected' | 'implemented';
+  createdAt: Date;
+}
