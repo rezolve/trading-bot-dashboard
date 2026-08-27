@@ -44,19 +44,9 @@ async function seedData(userId) {
       updatedAt: new Date(),
     });
 
-    // Account snapshot
-    console.log('Creating account snapshot...');
-    await setDoc(doc(db, 'accounts', userId), {
-      userId,
-      accountNumber: 'PA2J8KXXXX',
-      equity: 103245.67,
-      cash: 45678.90,
-      buyingPower: 182712.45,
-      optionsLevel: 2,
-      daytradeCount: 1,
-      patternDayTrader: false,
-      updatedAt: new Date(),
-    });
+    // Account - no dummy data, real account snapshot comes from Functions/agent
+    // Removed: PA2J8KXXXX, equity: 103245.67 - never fabricate account numbers or balances
+    console.log('Skipping account snapshot (no dummy data)');
 
     // Sample Positions
     console.log('Creating sample positions...');
@@ -257,7 +247,7 @@ async function seedData(userId) {
     console.log('');
     console.log('Summary:');
     console.log('- Bot settings configured');
-    console.log('- Account snapshot created ($103,245.67 equity)');
+    console.log('- Account snapshot: SKIPPED (no dummy data - use real Alpaca account)');
     console.log('- 3 open positions added (AAPL, TSLA, SPY)');
     console.log('- 3 orders added (1 filled, 1 open, 1 canceled)');
     console.log('- 3 trade intents added (1 pending approval, 1 approved, 1 rejected)');

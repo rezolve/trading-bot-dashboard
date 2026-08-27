@@ -1,0 +1,48 @@
+{
+  "botId": "hackathon-iron-condor",
+  "name": "Hackathon Iron Condor AI",
+  "description": "Competition bot for Alpaca AI Hackathon - AI-driven iron condor strategy with defined risk",
+  "competition": true,
+  "strategy": {
+    "type": "iron-condor-ai",
+    "params": {
+      "symbol": "SPY",
+      "dte_min": 30,
+      "dte_max": 45,
+      "spread_width": 5,
+      "delta_target": 0.20,
+      "min_credit": 0.50,
+      "max_contracts": 5,
+      "profit_target_pct": 0.50,
+      "loss_limit_pct": 2.00
+    }
+  },
+  "signals": [
+    {
+      "type": "indicator",
+      "config": {
+        "indicator": "iron_condor_ai",
+        "description": "AI analyzes IV, price action, and market regime"
+      }
+    }
+  ],
+  "triggers": [
+    {
+      "type": "scheduled",
+      "config": {
+        "frequency": "daily",
+        "time": "market_open",
+        "description": "Check for new iron condor opportunities daily at market open"
+      }
+    }
+  ],
+  "riskLimits": {
+    "maxNotionalPerOrder": 10000,
+    "maxPositionPercent": 5,
+    "allowedAssetClasses": ["option"],
+    "maxContracts": 5,
+    "noNakedShorts": true,
+    "paperOnly": true,
+    "competitionAccount": true
+  }
+}

@@ -1,0 +1,16 @@
+---
+description: Periodically sync from Grok Bot's fleet-pivot branch
+alwaysApply: true
+---
+
+# Grok Bot branch sync
+
+Grok Bot actively updates this repo on branch `cursor/fleet-pivot-693e`.
+
+## When working in this project
+
+- At the start of a session (and periodically while developing), run:
+  `git pull origin cursor/fleet-pivot-693e`
+- Prefer staying on `cursor/fleet-pivot-693e` unless the user asks otherwise.
+- After a pull that changes app code, rely on Next.js hot reload; restart `npm run dev` if deps, env, or config changed.
+- Do not overwrite Grok Bot remote work with force-push unless the user explicitly requests it.

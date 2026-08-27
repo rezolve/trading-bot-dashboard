@@ -1,0 +1,49 @@
+{
+  "botId": "bot_movers_day",
+  "name": "Movers Day-Trade Book",
+  "description": "Gap-and-go continuation scanner on liquid market movers. Hard rule: never hold overnight. PAPER ONLY.",
+  "version": "1.0.0",
+  "strategy": {
+    "type": "gap-and-go",
+    "universe": "Alpaca SIP market movers (gainers + most-active)",
+    "filters": {
+      "minPrice": 5.0,
+      "minADV": 5000000,
+      "excludeWarrants": true,
+      "excludeOTC": true,
+      "maxWatchlistSize": 20
+    },
+    "signals": {
+      "type": "continuation",
+      "regime": "SPY daily SMA10 > SMA30 (bullish only)",
+      "entry": "Break of premarket high or first RTH 1Min high",
+      "stop": "Signal-bar low or premarket low"
+    },
+    "timeframe": "1Min",
+    "dataFeed": "sip"
+  },
+  "riskLimits": {
+    "maxPositions": 3,
+    "maxNotionalPerOrder": 10000,
+    "maxPositionPercent": 0.10,
+    "allowedAssetClasses": ["stock"],
+    "hardRule": "Flatten ALL by 15:55 ET. No GTC overnight."
+  },
+  "triggers": [
+    {
+      "type": "scheduled",
+      "config": {
+        "description": "Market open scan",
+        "schedule": "09:30 ET daily"
+      }
+    },
+    {
+      "type": "manual",
+      "config": {
+        "description": "Manual start/stop from Fleet UI"
+      }
+    }
+  ],
+  "paperOnly": true,
+  "backtestNote": "No 5-year all-stock 1Min backtest. First real test is 1Min SIP on the filtered liquid universe, not SPY SMA."
+}

@@ -20,18 +20,8 @@ async function seedData() {
     updatedAt: new Date(),
   });
   
-  // Account
-  await setDoc(doc(db, 'accounts', userId), {
-    userId,
-    accountNumber: 'PA2J8KXXXX',
-    equity: 103245.67,
-    cash: 45678.90,
-    buyingPower: 182712.45,
-    optionsLevel: 2,
-    daytradeCount: 1,
-    patternDayTrader: false,
-    updatedAt: new Date(),
-  });
+  // Account - no dummy data, real account snapshot comes from Functions/agent
+  // Removed: PA2J8KXXXX, equity: 103245.67 - never fabricate account numbers or balances
   
   // Positions
   const positions = [

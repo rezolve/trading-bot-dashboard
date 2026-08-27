@@ -161,16 +161,16 @@ export default function TradeDeskPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Trade Desk</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-white">Trade Desk</h2>
           <p className="text-gray-400 text-sm mt-1">
             Create and manage paper trade intents for bot execution
           </p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 min-h-[44px] whitespace-nowrap"
         >
           <Send className="w-4 h-4" />
           New Trade Intent
@@ -196,8 +196,8 @@ export default function TradeDeskPage() {
 
       {/* Create Trade Intent Form */}
       {showForm && (
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Create Trade Intent</h3>
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-semibold text-white mb-4">Create Trade Intent</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -210,7 +210,7 @@ export default function TradeDeskPage() {
                   onChange={(e) => setFormData({ ...formData, symbol: e.target.value })}
                   required
                   placeholder="AAPL"
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                 />
               </div>
 
@@ -221,7 +221,7 @@ export default function TradeDeskPage() {
                 <select
                   value={formData.assetClass}
                   onChange={(e) => setFormData({ ...formData, assetClass: e.target.value as 'stock' | 'option' })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                 >
                   <option value="stock">Stock</option>
                   <option value="option">Option</option>
@@ -235,7 +235,7 @@ export default function TradeDeskPage() {
                 <select
                   value={formData.side}
                   onChange={(e) => setFormData({ ...formData, side: e.target.value as 'buy' | 'sell' })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                 >
                   <option value="buy">Buy</option>
                   <option value="sell">Sell</option>
@@ -249,7 +249,7 @@ export default function TradeDeskPage() {
                 <select
                   value={formData.orderType}
                   onChange={(e) => setFormData({ ...formData, orderType: e.target.value as any })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                 >
                   <option value="market">Market</option>
                   <option value="limit">Limit</option>
@@ -268,7 +268,7 @@ export default function TradeDeskPage() {
                   value={formData.qty}
                   onChange={(e) => setFormData({ ...formData, qty: e.target.value })}
                   placeholder="100"
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                 />
               </div>
 
@@ -282,7 +282,7 @@ export default function TradeDeskPage() {
                   value={formData.notional}
                   onChange={(e) => setFormData({ ...formData, notional: e.target.value })}
                   placeholder="10000"
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                 />
               </div>
 
@@ -297,7 +297,7 @@ export default function TradeDeskPage() {
                     value={formData.limitPrice}
                     onChange={(e) => setFormData({ ...formData, limitPrice: e.target.value })}
                     placeholder="150.00"
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                   />
                 </div>
               )}
@@ -313,7 +313,7 @@ export default function TradeDeskPage() {
                     value={formData.stopPrice}
                     onChange={(e) => setFormData({ ...formData, stopPrice: e.target.value })}
                     placeholder="145.00"
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                   />
                 </div>
               )}
@@ -325,7 +325,7 @@ export default function TradeDeskPage() {
                 <select
                   value={formData.timeInForce}
                   onChange={(e) => setFormData({ ...formData, timeInForce: e.target.value as any })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                 >
                   <option value="day">Day</option>
                   <option value="gtc">Good Till Canceled</option>
@@ -335,17 +335,17 @@ export default function TradeDeskPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors min-h-[44px]"
               >
                 Submit for Approval
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors min-h-[44px]"
               >
                 Cancel
               </button>
@@ -356,12 +356,12 @@ export default function TradeDeskPage() {
 
       {/* Trade Intents List */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-800">
-          <h3 className="text-lg font-semibold text-white">Trade Intents</h3>
+        <div className="px-4 md:px-6 py-4 border-b border-gray-800">
+          <h3 className="text-base md:text-lg font-semibold text-white">Trade Intents</h3>
         </div>
 
         {intents.length === 0 ? (
-          <div className="p-12 text-center">
+          <div className="p-8 md:p-12 text-center">
             <ListOrdered className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">No trade intents</p>
             <p className="text-gray-600 text-sm mt-2">
@@ -369,8 +369,74 @@ export default function TradeDeskPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <>
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-gray-800">
+              {intents.map((intent) => (
+                <div key={intent.id} className="p-4 hover:bg-gray-800/30 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-white text-lg">{intent.symbol}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          intent.side === 'buy' 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {intent.side.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">{formatDateTime(intent.createdAt)}</p>
+                    </div>
+                    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium ${
+                      getStatusColor(intent.status)
+                    }`}>
+                      {intent.status.replace(/_/g, ' ').toUpperCase()}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                    <div>
+                      <p className="text-gray-500 text-xs">Type</p>
+                      <p className="text-gray-300">{intent.orderType.toUpperCase()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Quantity</p>
+                      <p className="text-white font-medium">
+                        {intent.qty ? formatNumber(intent.qty) : formatCurrency(intent.notional || 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Price</p>
+                      <p className="text-gray-300">{intent.limitPrice ? formatCurrency(intent.limitPrice) : '—'}</p>
+                    </div>
+                  </div>
+
+                  {intent.status === 'pending_approval' && (
+                    <div className="flex gap-2 pt-2 border-t border-gray-800">
+                      <button
+                        onClick={() => handleApprove(intent.id)}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors min-h-[44px]"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Approve</span>
+                      </button>
+                      <button
+                        onClick={() => handleReject(intent.id)}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors min-h-[44px]"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>Reject</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-[1000px]">
               <thead className="bg-gray-800/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -465,6 +531,7 @@ export default function TradeDeskPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>

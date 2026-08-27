@@ -1,0 +1,11 @@
+# Alpaca Trading & Data
+alpaca-py==0.25.0
+
+# Firebase Admin SDK
+firebase-admin==6.4.0
+
+# Timezone support
+pytz==2024.1
+
+# Async support
+aiohttp==3.9.3

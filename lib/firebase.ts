@@ -1,6 +1,7 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFunctions, Functions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -14,21 +15,46 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
+let functions: Functions;
 
 if (typeof window !== 'undefined') {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   auth = getAuth(app);
   db = getFirestore(app);
+  functions = getFunctions(app);
 
   // Connect to emulators if enabled
   if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
     try {
-      connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true });
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
       connectFirestoreEmulator(db, '127.0.0.1', 8180);
+      connectFunctionsEmulator(functions, '127.0.0.1', 5001);
     } catch (error) {
       // Emulators already connected
     }
   }
 }
 
-export { app, auth, db };
+// Cloud Functions helpers - wrapped to avoid initialization errors
+export const callTriggerBacktest = (data: { botId: string; startDate: string; endDate: string; initialCapital?: number }) => {
+  return httpsCallable<
+    { botId: string; startDate: string; endDate: string; initialCapital?: number },
+    { backtestId: string; status: string }
+  >(functions, 'triggerBacktest')(data);
+};
+
+export const callSwapInBot = (data: { botId: string }) => {
+  return httpsCallable<
+    { botId: string },
+    { success: boolean; botId: string; status: string }
+  >(functions, 'swapInBot')(data);
+};
+
+export const callSwapOutBot = (data: { botId: string }) => {
+  return httpsCallable<
+    { botId: string },
+    { success: boolean; botId: string; status: string }
+  >(functions, 'swapOutBot')(data);
+};
+
+export { app, auth, db, functions };

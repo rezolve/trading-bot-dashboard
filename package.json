@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "emulators": "firebase emulators:start",
-    "seed": "node scripts/seed-firestore.js"
+    "seed": "node scripts/seed-firestore.js",
+    "seed-sma-spy": "ts-node scripts/seed-sma-spy.ts",
+    "seed-movers-day": "ts-node scripts/seed-movers-day.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
