@@ -122,6 +122,24 @@ services:
     networks:
       - bot-network
 
+  # Bot: Movers Day-Trade Book (Gap-and-Go Scanner)
+  bot-movers-day:
+    build:
+      context: .
+      dockerfile: bots/bots/movers-day/Dockerfile
+    environment:
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-demo-test}
+      - FIRESTORE_EMULATOR_HOST=firebase-emulators:8180
+      - APCA_API_KEY_ID=${APCA_PAPER_API_KEY_ID}
+      - APCA_API_SECRET_KEY=${APCA_PAPER_API_SECRET_KEY}
+      - APCA_API_BASE_URL=https://paper-api.alpaca.markets
+      - USER_ID=${USER_ID:-system}
+    depends_on:
+      - firebase-emulators
+    restart: unless-stopped
+    networks:
+      - bot-network
+
 networks:
   bot-network:
     driver: bridge

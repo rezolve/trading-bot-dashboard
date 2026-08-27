@@ -137,7 +137,7 @@ This starts:
   - Firestore: localhost:8180
   - Functions: localhost:5001
   - Storage: localhost:9199
-- **Bot Containers**: example-sma, example-stub
+- **Bot Containers**: example-sma, example-stub, orb-spy, movers-day, hackathon-iron-condor
 
 ### 5. Create Your First Bot
 
@@ -319,7 +319,19 @@ Your app will be live at: `https://your-project.firebaseapp.com`
 │       │   ├── config.json
 │       │   ├── Dockerfile
 │       │   └── main.py
-│       └── example-stub/
+│       ├── example-stub/
+│       │   ├── config.json
+│       │   ├── Dockerfile
+│       │   └── main.py
+│       ├── orb-spy/                 # Opening Range Breakout (SPY, SIP websocket)
+│       │   ├── config.json
+│       │   ├── Dockerfile
+│       │   └── README.md
+│       ├── movers-day/              # Gap-and-Go Scanner (liquid movers, intraday-only)
+│       │   ├── config.json
+│       │   ├── Dockerfile
+│       │   └── README.md
+│       └── hackathon-iron-condor/  # Options competition bot (Iron Condor AI)
 │           ├── config.json
 │           ├── Dockerfile
 │           └── main.py
@@ -751,6 +763,47 @@ A: Create a new file in `bots/strategies/` inheriting from `StrategyInterface`. 
 
 **Q: Can multiple users use this system?**  
 A: Yes. Firestore rules already enforce user isolation. Each user sees only their own bots.
+
+## Included Bots
+
+### 1. SMA SPY (Opening Range Breakout)
+- **Strategy**: Opening Range Breakout on SPY with SMA filter
+- **Universe**: SPY only
+- **Data Feed**: Alpaca SIP websocket (1-minute bars)
+- **Entry**: Break of opening range (09:30-09:45 ET) when SPY SMA10 > SMA30
+- **Exit**: Flatten before 15:55 ET
+- **Paper-only**: Strict validation, refuses live API
+- **Location**: `bots/bots/orb-spy/`
+
+### 2. Movers Day-Trade Book (Gap-and-Go Scanner)
+- **Strategy**: Gap-and-go continuation on liquid market movers
+- **Universe**: Alpaca SIP market movers (gainers + most-active by volume)
+- **Filters**: Price >= $5, no warrants/OTC, prefer ADV >= 5M, max 20 watchlist
+- **Max Positions**: 3 simultaneous
+- **Entry**: Break of premarket high when SPY SMA10 > SMA30 (bullish regime)
+- **Stop**: Signal-bar low or premarket low
+- **Exit**: **Hard flatten ALL by 15:55 ET** (no overnight holds)
+- **Size**: $10k or 10% equity per position, whichever is smaller
+- **Data Feed**: Alpaca SIP websocket + market movers API
+- **Paper-only**: Multi-layered validation, day orders only (no GTC)
+- **Backtest Note**: No synthetic 5-year all-stock backtest. First test is live 1Min SIP on filtered liquid universe.
+- **Location**: `bots/bots/movers-day/`
+
+### 3. Hackathon Iron Condor (Options AI)
+- **Strategy**: Defined-risk Iron Condor for Alpaca AI Trading Agents Hackathon
+- **Asset Class**: US options (level 2+)
+- **Competition Account**: Dedicated $100k paper account
+- **Risk Management**: Max notional, max contracts, no naked shorts, kill switch
+- **Paper-only**: Refuses live API, competition account validation
+- **Location**: `bots/bots/hackathon-iron-condor/`
+
+### 4. Example SMA (Template)
+- **Strategy**: Simple SMA crossover (example implementation)
+- **Location**: `bots/bots/example-sma/`
+
+### 5. Example Stub (Template)
+- **Strategy**: Minimal stub for new bot development
+- **Location**: `bots/bots/example-stub/`
 
 ## Disclaimer
 
