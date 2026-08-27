@@ -116,12 +116,12 @@ export default function ActivityPage() {
   return (
     <div className="space-y-6">
       {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-gray-800 pb-4">
+      <div className="flex flex-wrap gap-2 border-b border-gray-800 pb-4">
         {['all', 'bot', 'trades', 'errors'].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f as typeof filter)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors min-h-[44px] ${
               filter === f
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -134,12 +134,12 @@ export default function ActivityPage() {
 
       {/* Activity Feed */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-800">
-          <h2 className="text-lg font-semibold text-white">Activity Log</h2>
+        <div className="px-4 md:px-6 py-4 border-b border-gray-800">
+          <h2 className="text-base md:text-lg font-semibold text-white">Activity Log</h2>
         </div>
 
         {filteredEvents.length === 0 ? (
-          <div className="p-12 text-center">
+          <div className="p-8 md:p-12 text-center">
             <Activity className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">No activity to display</p>
             <p className="text-gray-600 text-sm mt-2">
@@ -153,15 +153,15 @@ export default function ActivityPage() {
               const color = eventColors[event.eventType] || 'text-gray-400';
               
               return (
-                <div key={event.id} className="px-6 py-4 hover:bg-gray-800/30 transition-colors">
-                  <div className="flex items-start gap-4">
-                    <div className={`p-2 rounded-lg bg-gray-800 ${color}`}>
+                <div key={event.id} className="px-4 md:px-6 py-4 hover:bg-gray-800/30 transition-colors">
+                  <div className="flex items-start gap-3 md:gap-4">
+                    <div className={`p-2 rounded-lg bg-gray-800 ${color} flex-shrink-0`}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4 mb-1">
-                        <p className="text-white font-medium">{event.message}</p>
-                        <span className="text-sm text-gray-500 whitespace-nowrap">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4 mb-1">
+                        <p className="text-white font-medium text-sm md:text-base">{event.message}</p>
+                        <span className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
                           {formatDateTime(event.createdAt)}
                         </span>
                       </div>

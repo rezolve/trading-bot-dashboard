@@ -130,8 +130,8 @@ export default function FleetPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Bot Fleet</h1>
-          <p className="text-gray-400">Monitor and control your trading bot fleet</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Bot Fleet</h1>
+          <p className="text-sm md:text-base text-gray-400">Monitor and control your trading bot fleet</p>
         </div>
       </div>
 
@@ -185,12 +185,12 @@ export default function FleetPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-gray-800">
+      <div className="flex gap-2 border-b border-gray-800 overflow-x-auto">
         {['all', 'draft', 'backtest', 'paper', 'stopped'].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f as typeof filter)}
-            className={`px-4 py-2 font-medium transition-colors ${
+            className={`px-4 py-3 font-medium transition-colors whitespace-nowrap min-h-[44px] ${
               filter === f
                 ? 'text-blue-400 border-b-2 border-blue-400'
                 : 'text-gray-400 hover:text-white'

@@ -114,12 +114,12 @@ export default function OrdersPage() {
   return (
     <div className="space-y-6">
       {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-gray-800 pb-4">
+      <div className="flex flex-wrap gap-2 border-b border-gray-800 pb-4">
         {['all', 'open', 'filled', 'canceled'].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f as typeof filter)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors min-h-[44px] ${
               filter === f
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -132,12 +132,12 @@ export default function OrdersPage() {
 
       {/* Orders Table */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-800">
-          <h2 className="text-lg font-semibold text-white">Orders</h2>
+        <div className="px-4 md:px-6 py-4 border-b border-gray-800">
+          <h2 className="text-base md:text-lg font-semibold text-white">Orders</h2>
         </div>
 
         {filteredOrders.length === 0 ? (
-          <div className="p-12 text-center">
+          <div className="p-8 md:p-12 text-center">
             <Receipt className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">No orders found</p>
             <p className="text-gray-600 text-sm mt-2">
@@ -145,8 +145,78 @@ export default function OrdersPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <>
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-gray-800">
+              {filteredOrders.map((order) => (
+                <div key={order.id} className="p-4 hover:bg-gray-800/30 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-white text-lg">{order.symbol}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          order.side === 'buy' 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {order.side.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">{formatDateTime(order.createdAt)}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium ${
+                        getStatusColor(order.status)
+                      }`}>
+                        {getStatusIcon(order.status)}
+                        <span className="hidden sm:inline">{order.status.replace(/_/g, ' ').toUpperCase()}</span>
+                      </div>
+                      {['pending_new', 'accepted', 'new', 'partially_filled'].includes(order.status) && (
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          className="text-red-400 hover:text-red-300 transition-colors p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          title="Cancel Order"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500 text-xs">Type</p>
+                      <p className="text-gray-300">{order.orderType.toUpperCase()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Quantity</p>
+                      <p className="text-white font-medium">
+                        {order.qty ? formatNumber(order.qty) : formatCurrency(order.notional || 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Limit Price</p>
+                      <p className="text-gray-300">{order.limitPrice ? formatCurrency(order.limitPrice) : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Filled</p>
+                      <p className="text-white font-medium">
+                        {formatNumber(order.filledQty)}
+                        {order.filledAvgPrice && (
+                          <span className="text-xs text-gray-500 ml-1">
+                            @ {formatCurrency(order.filledAvgPrice)}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-[1000px]">
               <thead className="bg-gray-800/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -242,6 +312,7 @@ export default function OrdersPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>

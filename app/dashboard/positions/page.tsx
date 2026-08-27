@@ -75,12 +75,12 @@ export default function PositionsPage() {
 
       {/* Positions Table */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-800">
-          <h2 className="text-lg font-semibold text-white">Open Positions</h2>
+        <div className="px-4 md:px-6 py-4 border-b border-gray-800">
+          <h2 className="text-base md:text-lg font-semibold text-white">Open Positions</h2>
         </div>
         
         {positions.length === 0 ? (
-          <div className="p-12 text-center">
+          <div className="p-8 md:p-12 text-center">
             <MinusCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">No open positions</p>
             <p className="text-gray-600 text-sm mt-2">
@@ -88,8 +88,73 @@ export default function PositionsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <>
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-gray-800">
+              {positions.map((position) => (
+                <div key={position.id} className="p-4 hover:bg-gray-800/30 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-white text-lg">{position.symbol}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          position.side === 'long' 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {position.side.toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 uppercase">
+                        {position.assetClass}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-1 mb-1">
+                        {position.unrealizedPL >= 0 ? (
+                          <TrendingUp className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4 text-red-400" />
+                        )}
+                        <span className={`font-semibold ${
+                          position.unrealizedPL >= 0 ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {formatCurrency(position.unrealizedPL)}
+                        </span>
+                      </div>
+                      <span className={`text-sm ${
+                        position.unrealizedPLPercent >= 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {formatPercent(position.unrealizedPLPercent)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500 text-xs">Quantity</p>
+                      <p className="text-white font-medium">{formatNumber(Math.abs(position.qty))}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Market Value</p>
+                      <p className="text-white font-medium">{formatCurrency(position.marketValue)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Avg Price</p>
+                      <p className="text-gray-300">{formatCurrency(position.avgEntryPrice)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Current Price</p>
+                      <p className="text-gray-300">{formatCurrency(position.currentPrice)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-[800px]">
               <thead className="bg-gray-800/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -176,6 +241,7 @@ export default function PositionsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>
